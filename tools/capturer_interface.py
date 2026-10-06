@@ -34,6 +34,28 @@ PAGES = [
 ]
 
 
+def aller(page, adresse, essais=3, attente="domcontentloaded"):
+    """
+    Ouvre une page, avec reprise.
+
+    Le pilote de navigateur echoue parfois par « ERR_ABORTED » alors que le
+    serveur repond en moins d'une seconde. C'est une instabilite du pilote, pas
+    un defaut de l'application : sans reprise, une capture manquerait pour une
+    raison qui n'a rien a voir avec le projet.
+    """
+    import time as _t
+    derniere = None
+    for _ in range(essais):
+        try:
+            page.goto(adresse, wait_until=attente, timeout=60000)
+            return True
+        except Exception as e:
+            derniere = e
+            _t.sleep(1.5)
+    print(f"      (echec apres {essais} essais : {str(derniere)[:60]})")
+    return False
+
+
 def poster(chemin, donnees=None):
     corps = urllib.parse.urlencode(donnees or {}).encode()
     requete = urllib.request.Request(BASE + chemin, data=corps, method="POST")
@@ -85,7 +107,8 @@ with sync_playwright() as p:
         # « networkidle » ne convient pas : pendant une capture, la page se
         # recharge toutes les 2 secondes et le reseau n'est donc jamais au repos.
         # L'attente du DOM suffit, et fonctionne dans les deux cas.
-        page.goto(BASE + chemin, wait_until="domcontentloaded", timeout=60000)
+        if not aller(page, BASE + chemin):
+            continue
         page.wait_for_timeout(1200)
         sortie = DOSSIER / f"{nom}.png"
         page.screenshot(path=str(sortie), full_page=True)
