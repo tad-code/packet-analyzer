@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block titre %}Tableau de bord — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+{% if not communications %}
+<section class="carte">
+    <h2>Aucune communication pour le moment</h2>
+    <p>
+        Cet outil lit les paquets qui passent sur une carte réseau et les rassemble en
+        <strong>communications</strong> : qui parle à qui, sur quel protocole, pendant
+        combien de temps et avec quel volume de données.
+    </p>
+    <p class="petit">
+        {% if capture_possible %}
+            Aucune capture n'a encore été lancée sur cette machine.
+        {% else %}
+            Aucune communication n'est enregistrée pour l'instant.
+        {% endif %}
+    </p>
+    {% if capture_possible %}
+        <p><a class="bouton-lien" href="{{ url_for('routes.capture') }}">Aller à la page de capture</a></p>
+    {% endif %}
+</section>
+{% else %}
+
+<section class="carte">
+    <h2>Vue générale</h2>
+    <p class="petit">
+        Tous les chiffres ci-dessous sont calculés à partir des paquets conservés en
+        mémoire, regroupés en communications.
+    </p>
+
+    <div class="compteurs">
+        <div class="compteur">
+            <span class="valeur">{{ stats.nb_communications }}</span>
+            <span class="etiquette">communications observées</span>
+        </div>
+        <div class="compteur">
+            <span class="valeur">{{ stats.nb_paquets }}</span>
+            <span class="etiquette">paquets échangés</span>
+        </div>
+        <div class="compteur">
+            <span class="valeur">
+                {% if stats.octets >= 1048576 %}{{ (stats.octets / 1048576) | round(2) }} Mo
+                {% elif stats.octets >= 1024 %}{{ (stats.octets / 1024) | round(1) }} Ko
+                {% else %}{{ stats.octets }} octets{% endif %}
+            </span>
+            <span class="etiquette">volume total</span>
+        </div>
+        <div class="compteur">
+            <span class="valeur">{{ stats.communications_actives }}</span>
+            <span class="etiquette">communications encore actives</span>
+        </div>
+    </div>
+</section>
+
+<section class="carte">
+    <h2>À quoi faut-il prêter attention ?</h2>
+    <p class="petit">Ces trois compteurs signalent les situations qui méritent un regard.</p>
+    <div class="compteurs">
+        <div class="compteur">
+            <span class="valeur">{{ stats.communications_refusees }}</span>
+            <span class="etiquette">communications refusées (RST reçu)</span>
+        </div>
+        <div class="compteur">
+            <span class="valeur">{{ stats.communications_terminees }}</span>
+            <span class="etiquette">communications terminées ou inactives</span>
+        </div>
+        <div class="compteur">
+            <span class="valeur">{{ stats.services | length }}</span>
+            <span class="etiquette">services distincts contactés</span>
+        </div>
+    </div>
+    <p class="petit">
+        Un RST signale qu'un service a rejeté la connexion : une tentative sur un port
+        fermé, par exemple. Cela peut être parfaitement normal — c'est une
+        <strong>observation</strong>, pas une accusation.
+    </p>
+</section>
+
+<div class="deux-colonnes">
+    <section class="carte">
+        <h2>Protocoles observés</h2>
+        {% if stats.protocoles %}
+        <table>
+            <thead><tr><th>Protocole</th><th>Communications</th></tr></thead>
+            <tbody>
+                {% for nom, nombre in stats.protocoles %}
+                <tr><td>{{ nom }}</td><td>{{ nombre }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}<p class="petit">Aucun protocole identifié.</p>{% endif %}
+    </section>
+
+    <section class="carte">
+        <h2>Ports les plus contactés</h2>
+        {% if stats.ports_frequents %}
+        <table>
+            <thead><tr><th>Port</th><th>Service habituel</th><th>Communications</th></tr></thead>
+            <tbody>
+                {% for port, nombre in stats.ports_frequents %}
+                <tr>
+                    <td class="mono">{{ port }}</td>
+                    <td>{{ services_connus.get(port) or "non identifié" }}</td>
+                    <td>{{ nombre }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}<p class="petit">Aucun port identifié.</p>{% endif %}
+    </section>
+</div>
+
+<div class="deux-colonnes">
+    <section class="carte">
+        <h2>Machines qui prennent l'initiative</h2>
+        <p class="petit">Les machines qui ont ouvert le plus de communications.</p>
+        <table>
+            <thead><tr><th>Adresse</th><th>Paquets émis</th></tr></thead>
+            <tbody>
+                {% for adresse, nombre in stats.principales_sources %}
+                <tr><td class="mono">{{ adresse }}</td><td>{{ nombre }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="carte">
+        <h2>Destinations les plus sollicitées</h2>
+        <p class="petit">Les machines avec lesquelles le plus de paquets ont été échangés.</p>
+        <table>
+            <thead><tr><th>Adresse</th><th>Paquets</th></tr></thead>
+            <tbody>
+                {% for adresse, nombre in stats.principales_destinations %}
+                <tr><td class="mono">{{ adresse }}</td><td>{{ nombre }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+
+<section class="carte">
+    <h2>Dernières communications</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Qui parle à qui</th>
+                <th>Protocole</th>
+                <th>Service</th>
+                <th>Paquets</th>
+                <th>Volume</th>
+                <th>État</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in communications %}
+            <tr>
+                <td class="mono">
+                    <a href="{{ url_for('routes.communication_detail', cle=c.cle) }}">
+                        {{ c.premiere_extremite.ip }}{% if c.premiere_extremite.port %}:{{ c.premiere_extremite.port }}{% endif %}
+                        ⇄
+                        {{ c.seconde_extremite.ip }}{% if c.seconde_extremite.port %}:{{ c.seconde_extremite.port }}{% endif %}
+                    </a>
+                </td>
+                <td>{{ c.protocole }}</td>
+                <td>{{ c.service_probable or "—" }}</td>
+                <td>{{ c.nb_paquets }}</td>
+                <td>{{ c.octets }} o</td>
+                <td><span class="etat etat-{{ c.etat | replace(' ', '-') }}">{{ c.etat }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="petit" style="margin-top:14px">
+        <a href="{{ url_for('routes.communications') }}">Voir toutes les communications</a>
+    </p>
+</section>
+
+{% endif %}
+{% endblock %}

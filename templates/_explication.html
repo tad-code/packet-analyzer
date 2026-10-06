@@ -1,0 +1,68 @@
+<section class="carte">
+    <h2>Explication</h2>
+
+    {% if resume_enregistre %}
+    <p class="petit">Phrase enregistrée au moment de la capture :</p>
+    <p class="phrase-principale">{{ resume_enregistre }}</p>
+    <p class="petit">Détail ci-dessous, recalculé depuis les données conservées.</p>
+    {% else %}
+    <p class="phrase-principale">{{ explication.resume }}</p>
+    {% endif %}
+
+    <div class="comptes-explication">
+        <span><strong>{{ explication.comptes.faits_observes }}</strong> faits observés dans les paquets</span>
+        <span><strong>{{ explication.comptes.observations }}</strong> constats d'observation</span>
+        <span><strong>{{ explication.comptes.interpretations }}</strong> interprétations</span>
+        <span><strong>{{ explication.comptes.hypotheses }}</strong> hypothèses</span>
+    </div>
+
+    <p class="petit">
+        Rien ici n'est supposé. Chaque déduction indique le fait observé sur lequel elle repose.
+        Les hypothèses sont annoncées comme telles : elles peuvent être fausses.
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Ce qui a été observé</h2>
+    <p class="petit">Ces valeurs viennent des paquets eux-mêmes. Aucune n'est déduite.</p>
+    <div class="defilement">
+        <table>
+            <thead><tr><th>Ce que l'on a regardé</th><th>Valeur</th><th>Champ d'origine</th></tr></thead>
+            <tbody>
+                {% for f in explication.faits %}
+                <tr {% if not f.disponible %}class="ligne-absente"{% endif %}>
+                    <td>{{ f.libelle }}</td>
+                    <td class="mono">{{ f.valeur }}</td>
+                    <td class="mono petit">{{ f.champ }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="carte">
+    <h2>Ce qui en a été déduit</h2>
+    <p class="petit">Chaque ligne indique la nature de la déduction, puis le fait qui la justifie.</p>
+    {% if explication.constats %}
+    <div class="defilement">
+        <table>
+            <thead><tr><th>Nature</th><th>Déduction</th><th>Parce que</th></tr></thead>
+            <tbody>
+                {% for k in explication.constats %}
+                <tr>
+                    <td><span class="niveau niveau-{{ k.niveau }}">{{ k.niveau }}</span></td>
+                    <td>{{ k.texte }}</td>
+                    <td class="petit">{{ k.base }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="bandeau neutre">
+        Les éléments observés ne permettent aucune déduction. C'est une information en soi :
+        le programme préfère ne rien affirmer plutôt que de combler un vide.
+    </p>
+    {% endif %}
+</section>

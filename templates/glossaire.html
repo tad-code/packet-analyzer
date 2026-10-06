@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block titre %}Glossaire — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+<section class="carte">
+    <h2>Le vocabulaire employé</h2>
+    <p>
+        Ces mots reviennent dans les explications. Ils sont définis ici une fois, simplement.
+        Si une définition vous paraît obscure, c'est elle qu'il faut corriger, pas vous.
+    </p>
+</section>
+
+<section class="carte">
+    {% for e in entrees %}
+    <div class="fiche">
+        <h3>{{ e.mot }}</h3>
+        <p>{{ e.definition }}</p>
+        {% if e.ici %}
+        <p class="petit"><strong>Dans ce projet :</strong> {{ e.ici }}</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</section>
+
+{% endblock %}

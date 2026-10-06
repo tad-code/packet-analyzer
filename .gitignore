@@ -1,0 +1,22 @@
+# Secrets : ne jamais versionner ce fichier
+.env
+
+# Environnements virtuels
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Captures enregistrees
+*.pcap
+*.pcapng
+captures/
+
+# Outils de developpement
+.pytest_cache/
+.vscode/
+.idea/
+
+# Depots et fichiers temporaires
+*.log
+tmp/

@@ -1,0 +1,240 @@
+/* Feuille de style unique de l'application.
+   Ecrite une seule fois, elle habille toutes les pages : chaque nouveau gabarit
+   herite de ces regles sans rien redefinir. */
+
+:root {
+    --fond: #10151c;
+    --fond-carte: #18202b;
+    --fond-doux: #1f2937;
+    --bord: #2b3648;
+    --texte: #e6edf3;
+    --texte-doux: #97a5b8;
+    --accent: #4da3ff;
+    --vert: #3fb950;
+    --orange: #d29922;
+    --rouge: #f85149;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--fond);
+    color: var(--texte);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.conteneur { max-width: 1360px; margin: 0 auto; padding: 0 24px; }
+
+/* Couleur des liens, valable partout. Sans cette regle, un lien ordinaire —
+   dans un paragraphe, un bandeau ou une legende — gardait le bleu par defaut
+   du navigateur, illisible sur fond sombre. Les regles plus precises (menu,
+   bouton-lien, tableaux) restent prioritaires. */
+a { color: var(--accent); }
+a:hover { color: #7fbcff; }
+
+header {
+    background: linear-gradient(180deg, #1b2433, #141b25);
+    border-bottom: 1px solid var(--bord);
+    padding: 22px 0;
+}
+.entete { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+h1 { margin: 0; font-size: 26px; letter-spacing: .3px; }
+.sous-titre { margin: 4px 0 0; color: var(--texte-doux); font-size: 14px; }
+
+.etat-mode { display: flex; align-items: center; gap: 8px; color: var(--texte-doux); font-size: 14px; white-space: nowrap; }
+.pastille { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.pastille.vert { background: var(--vert); }
+.pastille.gris { background: var(--texte-doux); }
+
+nav { background: var(--fond-carte); border-bottom: 1px solid var(--bord); }
+nav .conteneur { display: flex; gap: 4px; }
+nav a {
+    display: block; padding: 13px 18px; color: var(--texte-doux);
+    text-decoration: none; border-bottom: 2px solid transparent; font-weight: 500;
+}
+nav a:hover { color: var(--texte); }
+nav a.actif { color: var(--texte); border-bottom-color: var(--accent); }
+
+main { padding: 26px 0 50px; }
+
+.carte {
+    background: var(--fond-carte);
+    border: 1px solid var(--bord);
+    border-radius: 10px;
+    padding: 22px 24px;
+    margin-bottom: 22px;
+}
+.carte h2 { margin: 0 0 14px; font-size: 18px; }
+.carte p { margin: 0 0 10px; }
+.petit { font-size: 13px; color: var(--texte-doux); }
+
+.bandeau { padding: 13px 16px; border-radius: 8px; margin-bottom: 18px; border: 1px solid; }
+.bandeau.info { background: rgba(77,163,255,.10); border-color: rgba(77,163,255,.45); }
+.bandeau.alerte { background: rgba(248,81,73,.10); border-color: rgba(248,81,73,.45); }
+.bandeau.neutre { background: var(--fond-doux); border-color: var(--bord); }
+.bandeau p { margin: 6px 0 0; }
+
+.ligne-commandes {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--bord);
+}
+.ligne-commandes:last-of-type { border-bottom: none; }
+label { color: var(--texte-doux); font-size: 14px; }
+
+select, button {
+    font-family: inherit; font-size: 14px; padding: 9px 14px;
+    border-radius: 7px; border: 1px solid var(--bord);
+    background: var(--fond-doux); color: var(--texte);
+}
+select { min-width: 340px; max-width: 100%; }
+button { cursor: pointer; font-weight: 500; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button.principal { background: var(--accent); border-color: var(--accent); color: #07121f; }
+button.discret { background: transparent; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+
+.compteurs { display: flex; gap: 16px; flex-wrap: wrap; margin: 18px 0 8px; }
+.compteur {
+    flex: 1 1 200px; background: var(--fond-doux); border: 1px solid var(--bord);
+    border-radius: 9px; padding: 14px 18px;
+}
+.compteur .valeur { display: block; font-size: 27px; font-weight: 600; color: var(--accent); }
+.compteur .etiquette { display: block; font-size: 12.5px; color: var(--texte-doux); }
+
+.defilement { max-height: 560px; overflow: auto; border: 1px solid var(--bord); border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+thead th {
+    position: sticky; top: 0; background: var(--fond-doux); text-align: left;
+    padding: 11px 12px; border-bottom: 1px solid var(--bord);
+    font-size: 12.5px; font-weight: 600; color: var(--texte-doux); white-space: nowrap;
+}
+tbody td { padding: 9px 12px; border-bottom: 1px solid rgba(43,54,72,.55); }
+tbody tr:hover { background: rgba(77,163,255,.06); }
+.mono { font-family: Consolas, "Cascadia Mono", monospace; font-size: 12.5px; }
+
+.legende { margin-top: 18px; border-top: 1px solid var(--bord); padding-top: 14px; }
+.legende summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+.legende dl { margin: 14px 0 0; }
+.legende dt { font-weight: 600; margin-top: 12px; }
+.legende dd { margin: 3px 0 0 0; color: var(--texte-doux); }
+
+footer { border-top: 1px solid var(--bord); background: var(--fond-carte); padding: 18px 0 26px; }
+footer p { margin: 0 0 6px; font-size: 13px; color: var(--texte-doux); }
+footer a { color: var(--accent); }
+
+
+/* --- Version 2 : tableau de bord, communications, etats ------------------- */
+
+.deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+@media (max-width: 1000px) { .deux-colonnes { grid-template-columns: 1fr; } }
+.deux-colonnes .carte { margin-bottom: 0; }
+.deux-colonnes + .deux-colonnes { margin-top: 22px; }
+.deux-colonnes + section, section + .deux-colonnes { margin-top: 22px; }
+
+/* Etat d'une communication, deduit des drapeaux TCP reellement observes. */
+.etat {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 12.5px; font-weight: 600; white-space: nowrap;
+}
+.etat-en-cours  { background: rgba(63,185,80,.16);  color: #56d364; border: 1px solid rgba(63,185,80,.45); }
+.etat-terminee  { background: rgba(151,165,184,.14); color: #b6c2d1; border: 1px solid rgba(151,165,184,.40); }
+.etat-inactive  { background: rgba(151,165,184,.10); color: #8b98a8; border: 1px solid rgba(151,165,184,.30); }
+.etat-refusee   { background: rgba(248,81,73,.14);  color: #ff7b72; border: 1px solid rgba(248,81,73,.45); }
+.etat-ouverte   { background: rgba(210,153,34,.14); color: #e3b341; border: 1px solid rgba(210,153,34,.45); }
+
+.etiquette-service { margin-left: 12px; color: var(--texte-doux); font-size: 13.5px; }
+
+a.bouton-lien {
+    display: inline-block; padding: 9px 16px; border-radius: 7px;
+    background: var(--accent); color: #07121f; text-decoration: none; font-weight: 500;
+    margin-top: 6px;
+}
+a.bouton-lien:hover { filter: brightness(1.1); }
+
+/* Tableau « question / reponse » de la vue detaillee. */
+.tableau-questions { width: 100%; border-collapse: collapse; }
+.tableau-questions th {
+    text-align: left; vertical-align: top; width: 300px; padding: 10px 16px 10px 0;
+    color: var(--texte-doux); font-weight: 500; border-bottom: 1px solid rgba(43,54,72,.55);
+}
+.tableau-questions td {
+    padding: 10px 0; border-bottom: 1px solid rgba(43,54,72,.55); vertical-align: top;
+}
+.tableau-questions tr:last-child th, .tableau-questions tr:last-child td { border-bottom: none; }
+
+tbody td a { color: var(--accent); text-decoration: none; }
+tbody td a:hover { text-decoration: underline; }
+
+/* Le lien de retour en haut de la vue detaillee doit rester lisible. */
+p.petit a { color: var(--accent); }
+
+
+/* --- Version 2 : page Historique ----------------------------------------- */
+
+ol.etapes { margin: 12px 0 16px; padding-left: 22px; color: var(--texte-doux); }
+ol.etapes li { margin-bottom: 9px; }
+ol.etapes .mono, .bandeau .mono { color: var(--texte); }
+.carte h3 { color: var(--texte); font-weight: 600; }
+
+
+/* --- Version 3 : l'explication ------------------------------------------- */
+
+.phrase-principale {
+    font-size: 1.06rem;
+    line-height: 1.65;
+    color: var(--texte);
+    border-left: 3px solid var(--accent, #4a9eff);
+    padding: 10px 0 10px 16px;
+    margin: 14px 0;
+    background: rgba(74, 158, 255, 0.06);
+    border-radius: 0 8px 8px 0;
+}
+
+.comptes-explication {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    margin: 14px 0;
+    color: var(--texte-doux);
+    font-size: 0.9rem;
+}
+
+.comptes-explication strong { color: var(--texte); font-size: 1.05rem; }
+
+/* Les trois niveaux de certitude. La couleur dit ce que le mot dit deja :
+   l'observation est neutre, l'interpretation attire l'oeil, l'hypothese
+   avertit qu'il ne faut pas s'y fier. */
+.niveau {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.niveau-observation    { background: rgba(120, 200, 120, 0.16); color: #7ec97e; }
+.niveau-interpretation { background: rgba(74, 158, 255, 0.16);  color: #6cb2ff; }
+.niveau-hypothese      { background: rgba(230, 170, 60, 0.16);  color: #e0aa4a; }
+
+.ligne-absente { opacity: 0.45; }
+.ligne-absente .mono { font-style: italic; }
+
+.fiche {
+    border-left: 2px solid var(--bord);
+    padding: 4px 0 4px 16px;
+    margin: 18px 0;
+}
+.fiche h3 { margin: 0 0 6px; font-size: 1rem; color: var(--texte); font-weight: 600; }
+.fiche dl { margin: 0; }
+.fiche dt {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--texte-doux);
+    margin-top: 10px;
+}
+.fiche dd { margin: 3px 0 0; line-height: 1.6; }

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block titre %}Analyseur réseau{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    {# Pendant une capture, la page se recharge toutes les 2 secondes pour
+       montrer les paquets au fur et a mesure. Le rechargement est suspendu
+       des que la capture s'arrete, pour ne pas deranger la lecture. #}
+    {% if capture_en_cours %}<meta http-equiv="refresh" content="2">{% endif %}
+</head>
+<body>
+
+<header>
+    <div class="conteneur entete">
+        <div>
+            <h1>Analyseur réseau</h1>
+            <p class="sous-titre">Observer, comprendre et expliquer le trafic réseau</p>
+        </div>
+        <div class="etat-mode">
+            <span class="pastille {{ 'vert' if capture_possible else 'gris' }}"></span>
+            Mode {{ mode }}
+        </div>
+    </div>
+</header>
+
+<nav>
+    <div class="conteneur">
+        <a href="{{ url_for('routes.accueil') }}"
+           class="{{ 'actif' if page == 'tableau' }}">Tableau de bord</a>
+        <a href="{{ url_for('routes.communications') }}"
+           class="{{ 'actif' if page == 'communications' }}">Communications</a>
+        <a href="{{ url_for('routes.capture') }}"
+           class="{{ 'actif' if page == 'capture' }}">Capture</a>
+        <a href="{{ url_for('routes.historique') }}"
+           class="{{ 'actif' if page == 'historique' }}">Historique</a>
+        <a href="{{ url_for('routes.protocoles') }}"
+           class="{{ 'actif' if page == 'protocoles' }}">Protocoles</a>
+        <a href="{{ url_for('routes.glossaire') }}"
+           class="{{ 'actif' if page == 'glossaire' }}">Glossaire</a>
+    </div>
+</nav>
+
+<main class="conteneur">
+    {% block contenu %}{% endblock %}
+</main>
+
+<footer>
+    <div class="conteneur">
+        <p>
+            Analyseur réseau — version {{ version }} ·
+            Mode {{ mode }} ·
+            <a href="{{ url_for('routes.health') }}">état du service</a>
+        </p>
+        <p class="petit">
+            Cet outil n'analyse que le trafic d'un réseau sur lequel vous êtes autorisé
+            à travailler. Le contenu des communications chiffrées (HTTPS) n'est pas lisible :
+            seules les métadonnées sont observées.
+        </p>
+    </div>
+</footer>
+
+</body>
+</html>

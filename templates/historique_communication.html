@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block titre %}Communication enregistrée — Capture n°{{ analyse.id }}{% endblock %}
+
+{% block contenu %}
+
+<p class="petit">
+    <a href="{{ url_for('routes.historique_detail', analyse_id=analyse.id) }}">← Retour à la capture n°{{ analyse.id }}</a>
+</p>
+
+<section class="carte">
+    <h2>{{ ligne.ip_premiere | adresse(ligne.port_premiere) }} ⇄ {{ ligne.ip_seconde | adresse(ligne.port_seconde) }}</h2>
+    <p class="petit">
+        Communication enregistrée le {{ (ligne.debut or "")[:19] | replace("T", " ") }}
+        — protocole {{ ligne.protocole or "inconnu" }}
+        {%- if ligne.port_service %}, port {{ ligne.port_service }}{% endif %}.
+    </p>
+</section>
+
+{% include "_drapeaux.html" %}
+
+{% include "_explication.html" %}
+
+{% endblock %}

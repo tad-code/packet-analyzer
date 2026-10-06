@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block titre %}Observer le trafic — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+{# --- Ce que fait cet ecran ------------------------------------------------ #}
+<section class="carte">
+    <h2>Que fait cet écran ?</h2>
+    <p>
+        Il lit les paquets qui passent sur une carte réseau de cette machine et les
+        affiche au fur et à mesure. Chaque ligne du tableau est <strong>un paquet</strong> :
+        un morceau de données envoyé d'une machine à une autre.
+    </p>
+    <p class="petit">
+        L'analyse en communications, l'explication en langage humain, la détection et
+        l'enrichissement par une API arriveront dans les versions suivantes.
+        Cette version se limite à <strong>capturer et afficher</strong>.
+    </p>
+</section>
+
+{# --- Bandeaux d'information et d'erreur ----------------------------------- #}
+{% if message %}
+    <div class="bandeau info">{{ message }}</div>
+{% endif %}
+
+{% if erreur %}
+    <div class="bandeau alerte">
+        <strong>{{ erreur }}</strong>
+        {% if erreur_detail %}<p class="petit">{{ erreur_detail }}</p>{% endif %}
+    </div>
+{% endif %}
+
+{% if erreur_capture %}
+    <div class="bandeau alerte">
+        <strong>La capture a signalé un problème.</strong>
+        <p class="petit">{{ erreur_capture }}</p>
+    </div>
+{% endif %}
+
+{# --- Commandes ------------------------------------------------------------ #}
+<section class="carte">
+    <h2>Capture</h2>
+
+    {% if not capture_possible %}
+        <p class="bandeau neutre">
+            La capture n'est pas disponible dans la version en ligne : elle exige un accès
+            direct à une carte réseau et les droits administrateur, que n'a pas un serveur
+            distant. Cette page affiche les résultats enregistrés par l'application locale.
+        </p>
+    {% elif not interfaces %}
+        <p class="bandeau neutre">
+            Aucune interface réseau n'a été détectée. Vérifiez que le pilote de capture
+            (Npcap) est installé et que vous disposez des droits administrateur.
+        </p>
+    {% else %}
+
+    <form method="post" action="{{ url_for('routes.demarrer') }}" class="ligne-commandes">
+        <label for="interface">Carte réseau à écouter</label>
+        <select name="interface" id="interface" {{ 'disabled' if capture_en_cours }}>
+            {% for iface in interfaces %}
+                <option value="{{ iface.nom }}"
+                        {{ 'selected' if iface.nom == (interface_active or interface_proposee) }}>
+                    {{ iface.nom }}
+                    {%- if iface.adresse_ip %} — {{ iface.adresse_ip }}{% endif %}
+                    {%- if iface.description %} — {{ iface.description[:40] }}{% endif %}
+                    {%- if iface.virtuelle %} (interface virtuelle){% endif %}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="principal" {{ 'disabled' if capture_en_cours }}>Démarrer</button>
+    </form>
+
+    <form method="post" action="{{ url_for('routes.arreter') }}" class="ligne-commandes">
+        <button type="submit" {{ 'disabled' if not capture_en_cours }}>Arrêter</button>
+        <span class="petit">
+            {% if capture_en_cours %}
+                Capture en cours sur <strong>{{ interface_active }}</strong>.
+                La page se rafraîchit automatiquement.
+            {% else %}
+                Aucune capture en cours.
+            {% endif %}
+        </span>
+    </form>
+
+    <form method="post" action="{{ url_for('routes.enregistrer') }}" class="ligne-commandes">
+        <button type="submit" class="principal">Enregistrer cette capture</button>
+        <span class="petit">
+            Conserve la capture et ses communications dans la base, pour la retrouver
+            dans l'historique. Les paquets eux-mêmes ne sont pas enregistrés : une
+            capture en produit des milliers, et seules les communications ont un sens
+            d'analyse.
+        </span>
+    </form>
+
+    <form method="post" action="{{ url_for('routes.vider') }}">
+        <button type="submit" class="discret">Vider la liste</button>
+        <span class="petit">
+            Efface les paquets conservés en mémoire. La capture continue si elle est en cours.
+        </span>
+    </form>
+
+    <div class="compteurs">
+        <div class="compteur">
+            <span class="valeur">{{ total_vu }}</span>
+            <span class="etiquette">paquets vus depuis le démarrage</span>
+        </div>
+        <div class="compteur">
+            <span class="valeur">{{ nb_conserves }} / {{ taille_tampon }}</span>
+            <span class="etiquette">paquets conservés en mémoire</span>
+        </div>
+    </div>
+    <p class="petit">
+        Seuls les {{ taille_tampon }} derniers paquets sont gardés : une capture longue
+        finirait par saturer la mémoire. Les paquets plus anciens sont oubliés, mais ils
+        ont bien été comptés.
+    </p>
+
+    {% endif %}
+</section>
+
+{# --- Liste des paquets ---------------------------------------------------- #}
+<section class="carte">
+    <h2>Paquets observés</h2>
+
+    {% if paquets %}
+    <div class="defilement">
+        <table>
+            <thead>
+                <tr>
+                    <th title="Numéro d'ordre du paquet dans la capture">N°</th>
+                    <th title="Heure à laquelle le paquet a été vu">Heure</th>
+                    <th title="Adresse IP de la machine qui envoie">Source</th>
+                    <th title="Adresse IP de la machine qui reçoit">Destination</th>
+                    <th title="Protocole de transport : TCP, UDP ou ICMP">Protocole</th>
+                    <th title="Port de l'émetteur, puis du service contacté">Ports</th>
+                    <th title="Taille du paquet en octets, en-têtes compris">Taille</th>
+                    <th title="Service habituellement associé au port de destination">Service probable</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in paquets %}
+                <tr>
+                    <td>{{ p.rang }}</td>
+                    <td class="mono">
+                        {{ p.heure_lisible or "—" }}
+                    </td>
+                    <td class="mono">{{ p.source or "non disponible" }}</td>
+                    <td class="mono">{{ p.destination or "non disponible" }}</td>
+                    <td>{{ p.protocole_transport or p.protocole_ip or "inconnu" }}</td>
+                    <td class="mono">
+                        {% if p.port_source is not none and p.port_destination is not none %}
+                            {{ p.port_source }} → {{ p.port_destination }}
+                        {% elif p.port_destination is not none %}
+                            → {{ p.port_destination }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ p.taille if p.taille is not none else "—" }}</td>
+                    <td>{{ p.service_probable or "—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="bandeau neutre">
+        Aucun paquet pour le moment. Lancez une capture, ou attendez que du trafic
+        passe sur l'interface choisie — ouvrez une page web pour en produire.
+    </p>
+    {% endif %}
+
+    {# Exigence permanente du projet : aucun élément ne s'affiche sans explication.
+       Cette légende reste visible même sans paquet, pour que l'utilisateur
+       comprenne ce que l'outil montrera avant même de lancer une capture. #}
+    <details class="legende">
+        <summary>Que signifie chaque colonne ?</summary>
+        <dl>
+            <dt>Source / Destination</dt>
+            <dd>Les adresses IP des deux machines qui échangent ce paquet. Une adresse
+                <span class="mono">192.168.x.x</span> ou <span class="mono">10.x.x.x</span>
+                est une adresse privée, interne au réseau local ; les autres sont publiques.</dd>
+            <dt>Protocole</dt>
+            <dd><strong>TCP</strong> : communication fiable, avec ouverture et fermeture de
+                connexion — c'est le cas du web. <strong>UDP</strong> : envoi sans connexion,
+                plus rapide mais sans garantie — c'est le cas du DNS.
+                <strong>ICMP</strong> : messages de contrôle du réseau, comme le <em>ping</em>.</dd>
+            <dt>Ports</dt>
+            <dd>Le port désigne le service visé sur la machine distante. Le port de gauche
+                est celui de l'émetteur, celui de droite le service contacté.</dd>
+            <dt>Taille</dt>
+            <dd>Nombre d'octets du paquet, en-têtes compris. Additionnées, ces tailles
+                donneront le volume échangé par une communication.</dd>
+            <dt>Service probable</dt>
+            <dd>Le service habituellement associé à ce port. <strong>C'est une indication,
+                pas une certitude :</strong> le port 443 laisse penser à du HTTPS, mais rien
+                n'empêche un autre service d'y répondre. Le contenu chiffré, lui, n'est
+                jamais lu.</dd>
+        </dl>
+    </details>
+</section>
+
+{% endblock %}

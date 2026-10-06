@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block titre %}Erreur {{ code }} — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+<section class="carte">
+    <h2>{{ code }} — {{ titre }}</h2>
+    <p>{{ explication }}</p>
+    {% if detail %}
+        <p class="petit">{{ detail }}</p>
+    {% endif %}
+    <p><a href="{{ url_for('routes.accueil') }}">Revenir à la page d'observation</a></p>
+</section>
+{% endblock %}

@@ -1,0 +1,51 @@
+<section class="carte">
+    <h2>Détail technique</h2>
+    <p class="petit">
+        Ces valeurs sont celles du regroupement, telles quelles. Elles servent à vérifier
+        par soi-même ce que l'explication affirme.
+    </p>
+    <div class="defilement">
+        <table>
+            <thead><tr><th>Élément</th><th>Valeur</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Drapeaux TCP observés</td>
+                    <td class="mono">{{ drapeaux_vus or "aucun" }}</td>
+                </tr>
+                {% if cle %}
+                <tr><td>Clé de la communication</td><td class="mono">{{ cle }}</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if drapeaux %}
+    <h3>Les drapeaux observés sur cette communication</h3>
+    <dl class="fiche">
+        {% for nom, sens in drapeaux %}
+        <dt class="mono">{{ nom }}</dt>
+        <dd>{{ sens }}</dd>
+        {% endfor %}
+    </dl>
+    {% else %}
+    <p class="bandeau neutre">
+        Aucun drapeau n'a été conservé pour cette communication — la base ne l'a pas enregistré.
+        L'explication ne peut donc rien affirmer sur la manière dont elle s'est ouverte ou fermée.
+    </p>
+    {% endif %}
+
+    <h3>Pour comprendre les drapeaux</h3>
+    <p class="petit">
+        Un drapeau est une marque dans l'en-tête d'un paquet TCP, qui indique son rôle dans la
+        conversation. Dans les paquets, ils sont notés par une seule lettre : <span class="mono">S</span>
+        pour SYN, <span class="mono">A</span> pour ACK, <span class="mono">F</span> pour FIN,
+        <span class="mono">R</span> pour RST, <span class="mono">P</span> pour PSH. C'est ce qui rend
+        une valeur comme <span class="mono">AFPR</span> illisible sans cette table.
+    </p>
+    <dl class="fiche">
+        {% for nom, sens in drapeaux_connus.items() %}
+        <dt class="mono">{{ nom }}</dt>
+        <dd>{{ sens }}</dd>
+        {% endfor %}
+    </dl>
+</section>

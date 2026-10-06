@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block titre %}Communication — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+<p class="petit"><a href="{{ url_for('routes.communications') }}">← Retour aux communications</a></p>
+
+<section class="carte">
+    <h2>Cette communication</h2>
+    <p class="mono phrase-entete">
+        {{ communication.premiere_extremite.ip | adresse(communication.premiere_extremite.port) }}
+        ⇄
+        {{ communication.seconde_extremite.ip | adresse(communication.seconde_extremite.port) }}
+    </p>
+    <p class="petit">
+        Machine à l'origine de l'échange :
+        <span class="mono">{{ communication.initiateur or "non déterminée" }}</span>
+        {% if communication.etat %}
+        · état observé : <span class="etat etat-{{ communication.etat | replace(' ', '-') }}">{{ communication.etat }}</span>
+        {% endif %}
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Les questions auxquelles cette page répond</h2>
+    <p class="petit">
+        Ces réponses sont calculées à partir des seuls paquets observés, et non du contenu
+        des échanges : celui-ci est le plus souvent chiffré, et n'est jamais lu.
+    </p>
+    <div class="defilement">
+        <table>
+            <thead>
+                <tr><th>Question</th><th>Réponse</th></tr>
+            </thead>
+            <tbody>
+                {% for question, reponse in questions %}
+                <tr>
+                    <td>{{ question }}</td>
+                    <td class="mono">{{ reponse }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% include "_drapeaux.html" %}
+
+{% include "_explication.html" %}
+
+<section class="carte">
+    <h2>Ce que cette page ne fait pas</h2>
+    <p>
+        Elle ne lit pas le contenu des échanges. Le port 443 et la plupart des services
+        modernes sont chiffrés : ce qui circule n'est pas accessible, et le programme ne
+        prétend jamais le contraire.
+    </p>
+    <p class="petit">
+        Ce que l'analyse observe, ce sont les <em>enveloppes</em> : qui parle, quand, pendant
+        combien de temps, en quelle quantité. Le contenu des messages reste hors de portée —
+        c'est une limite du chiffrement, pas un choix de l'outil.
+    </p>
+</section>
+
+{% endblock %}

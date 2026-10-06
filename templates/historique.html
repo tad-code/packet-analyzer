@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block titre %}Historique — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+<section class="carte">
+    <h2>Historique des captures</h2>
+    <p>
+        Chaque ligne correspond à une <strong>capture enregistrée</strong> : une session
+        d'observation, avec son interface, sa date, et le nombre de communications
+        qu'elle a révélées. Les paquets eux-mêmes ne sont pas conservés — une capture
+        en produit des milliers, et seules les communications ont un sens d'analyse.
+    </p>
+</section>
+
+{% if not disponible %}
+<section class="carte">
+    <div class="bandeau neutre">
+        <strong>L'historique n'est pas disponible.</strong>
+        <p class="petit">{{ raison }}</p>
+    </div>
+    <h3 style="font-size:16px;margin-top:20px">Ce qu'il faut faire</h3>
+    <ol class="etapes">
+        <li>
+            Créer la clé secrète dans Supabase :
+            <span class="mono">Settings → API keys → Secret keys</span>
+        </li>
+        <li>
+            La coller dans le fichier <span class="mono">.env</span>, à la ligne
+            <span class="mono">SUPABASE_SECRET_KEY=</span>
+        </li>
+        <li>
+            Créer les tables : ouvrir <span class="mono">SQL Editor</span>, coller le
+            contenu de <span class="mono">sql/schema.sql</span>, puis
+            <span class="mono">Run</span>
+        </li>
+        <li>Redémarrer l'application.</li>
+    </ol>
+    <p class="petit">
+        Pourquoi la clé secrète et non la clé publique ? Parce que la sécurité par ligne
+        est <strong>fermée</strong> sur ces tables. La clé publique, elle, est faite pour
+        être publiée : l'autoriser à écrire rendrait la base effaçable par n'importe qui.
+    </p>
+</section>
+
+{% elif erreur %}
+<section class="carte">
+    <div class="bandeau alerte">
+        <strong>{{ erreur }}</strong>
+        {% if erreur_detail %}<p class="petit">{{ erreur_detail }}</p>{% endif %}
+    </div>
+    <p class="petit">
+        Vérifiez que le bloc <span class="mono">sql/schema.sql</span> a bien été exécuté
+        dans l'éditeur SQL de Supabase, et que la clé secrète est correcte.
+    </p>
+</section>
+
+{% elif not analyses %}
+<section class="carte">
+    <div class="bandeau neutre">
+        Aucune capture n'a encore été enregistrée.
+        <p class="petit">
+            Lancez une capture depuis la page
+            <a href="{{ url_for('routes.capture') }}">Capture</a>, puis cliquez sur
+            « Enregistrer cette capture ».
+        </p>
+    </div>
+</section>
+
+{% else %}
+
+<section class="carte">
+    <div class="defilement">
+        <table>
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th title="Date et heure de début de la capture">Début</th>
+                    <th title="Carte réseau écoutée pendant cette capture">Interface</th>
+                    <th title="Nombre de paquets observés pendant la capture">Paquets</th>
+                    <th title="Nombre de communications distinctes observées">Communications</th>
+                    <th title="Volume total échangé, en octets">Volume</th>
+                    <th title="État de la capture">État</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in analyses %}
+                <tr>
+                    <td class="mono">{{ a.id }}</td>
+                    <td class="mono">{{ (a.debut or "")[:19] | replace("T", " ") }}</td>
+                    <td>{{ a.interface or "—" }}</td>
+                    <td>{{ a.nb_paquets }}</td>
+                    <td>
+                        <a href="{{ url_for('routes.historique_detail', analyse_id=a.id) }}">
+                            {{ a.nb_communications }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if a.octets >= 1048576 %}{{ (a.octets / 1048576) | round(2) }} Mo
+                        {% elif a.octets >= 1024 %}{{ (a.octets / 1024) | round(1) }} Ko
+                        {% else %}{{ a.octets }} o{% endif %}
+                    </td>
+                    <td><span class="etat etat-{{ 'terminee' if a.etat == 'terminee' else 'en-cours' }}">{{ a.etat }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <details class="legende">
+        <summary>Que contient chaque colonne ?</summary>
+        <dl>
+            <dt>Début</dt>
+            <dd>Instant auquel la capture a été lancée.</dd>
+            <dt>Interface</dt>
+            <dd>La carte réseau écoutée. Deux captures sur des interfaces différentes
+                n'observent pas le même trafic.</dd>
+            <dt>Paquets</dt>
+            <dd>Nombre total de paquets vus. Il est plus élevé que ce que l'affichage
+                montrait : le tampon de l'interface est limité, mais le compteur, lui,
+                n'oublie rien.</dd>
+            <dt>Communications</dt>
+            <dd>Nombre de conversations distinctes observées. Cliquez pour voir le détail.</dd>
+            <dt>Volume</dt>
+            <dd>Somme des octets échangés dans toutes les communications de la capture.</dd>
+        </dl>
+    </details>
+</section>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block titre %}Capture n°{{ analyse.id }} — Historique{% endblock %}
+
+{% block contenu %}
+
+<p class="petit"><a href="{{ url_for('routes.historique') }}">← Retour à l'historique</a></p>
+
+<section class="carte">
+    <h2>Capture n°{{ analyse.id }}</h2>
+    <div class="compteurs">
+        <div class="compteur">
+            <span class="valeur">{{ analyse.nb_paquets }}</span>
+            <span class="etiquette">paquets observés</span>
+        </div>
+        <div class="compteur">
+            <span class="valeur">{{ analyse.nb_communications }}</span>
+            <span class="etiquette">communications</span>
+        </div>
+        <div class="compteur">
+            <span class="valeur">
+                {% if analyse.octets >= 1048576 %}{{ (analyse.octets / 1048576) | round(2) }} Mo
+                {% elif analyse.octets >= 1024 %}{{ (analyse.octets / 1024) | round(1) }} Ko
+                {% else %}{{ analyse.octets }} o{% endif %}
+            </span>
+            <span class="etiquette">volume total</span>
+        </div>
+        <div class="compteur">
+            <span class="valeur">{{ (analyse.debut or "")[:19] | replace("T", " ") }}</span>
+            <span class="etiquette">début de la capture · interface {{ analyse.interface or "inconnue" }}</span>
+        </div>
+    </div>
+</section>
+
+<section class="carte">
+    <h2>Communications de cette capture
+        {% if communications %}<span class="petit">— {{ communications | length }} au total</span>{% endif %}
+    </h2>
+
+    {% if not communications %}
+        <p class="bandeau neutre">Cette capture n'a révélé aucune communication.</p>
+    {% else %}
+    <p class="petit">
+        La colonne « Explication » reprend la phrase enregistrée au moment de la capture :
+        ce qui a été constaté ce jour-là. Cliquez sur une communication pour en voir le détail.
+        {% if communications | length > 12 %}Faites défiler le tableau pour voir les suivantes.{% endif %}
+    </p>
+    <div class="defilement">
+        <table>
+            <thead>
+                <tr>
+                    <th>Qui parle à qui</th>
+                    <th>Service</th>
+                    <th>Paquets</th>
+                    <th>Volume</th>
+                    <th>Explication</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in communications %}
+                {% set c = e.ligne %}
+                <tr>
+                    <td class="mono">
+                        <a href="{{ url_for('routes.historique_communication', analyse_id=analyse.id, communication_id=c.id) }}">
+                            {{ c.ip_premiere | adresse(c.port_premiere) }}
+                            ⇄
+                            {{ c.ip_seconde | adresse(c.port_seconde) }}
+                        </a>
+                        <span class="petit">({{ c.protocole }})</span>
+                    </td>
+                    <td>
+                        {% if c.port_service is not none %}
+                            <span class="mono">{{ c.port_service }}</span>
+                            {%- if c.service_probable %} <span class="petit">({{ c.service_probable }})</span>{% endif %}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ c.nb_paquets }}</td>
+                    <td>
+                        {% if c.octets >= 1048576 %}{{ (c.octets / 1048576) | round(2) }} Mo
+                        {% elif c.octets >= 1024 %}{{ (c.octets / 1024) | round(1) }} Ko
+                        {% else %}{{ c.octets }} o{% endif %}
+                    </td>
+                    <td class="petit">{{ c.resume or e.explication.resume }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</section>
+
+{% endblock %}

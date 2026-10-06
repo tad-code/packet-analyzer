@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block titre %}Communications — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+<section class="carte">
+    <h2>Les communications observées</h2>
+    <p>
+        Un paquet isolé ne représente pas une conversation. Les paquets qui partagent
+        les <strong>mêmes deux machines, les mêmes deux ports et le même protocole</strong>
+        sont donc rassemblés en une seule <strong>communication</strong>.
+    </p>
+    <p class="petit">
+        Les deux sens de l'échange comptent pour une seule communication : une question
+        et sa réponse forment la même conversation.
+    </p>
+</section>
+
+{% if communications %}
+<p class="petit">{{ communications | length }} communication{{ "s" if communications | length > 1 }} observée{{ "s" if communications | length > 1 }}, classée{{ "s" if communications | length > 1 }} de la plus active à la moins active.</p>
+{% endif %}
+{% if not communications %}
+<section class="carte">
+    <h2>Aucune communication</h2>
+    <p class="petit">
+        {% if capture_possible %}
+            Lancez une capture puis produisez du trafic — ouvrez une page web, par exemple.
+        {% else %}
+            Aucune communication n'est enregistrée pour l'instant.
+        {% endif %}
+    </p>
+    {% if capture_possible %}
+        <p><a class="bouton-lien" href="{{ url_for('routes.capture') }}">Aller à la page de capture</a></p>
+    {% endif %}
+</section>
+{% else %}
+
+<section class="carte">
+    <div class="defilement">
+        <table>
+            <thead>
+                <tr>
+                    <th>Qui parle à qui</th>
+                    <th title="Protocole de transport employé">Protocole</th>
+                    <th title="Port du service contacté, et service habituellement associé">Service</th>
+                    <th title="Nombre de paquets échangés dans les deux sens">Paquets</th>
+                    <th title="Volume total échangé, en octets">Volume</th>
+                    <th title="Durée entre le premier et le dernier paquet">Durée</th>
+                    <th title="Déduit des drapeaux TCP observés">État</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in communications %}
+                <tr>
+                    <td class="mono">
+                        <a href="{{ url_for('routes.communication_detail', cle=c.cle) }}">
+                            {{ c.premiere_extremite.ip }}{% if c.premiere_extremite.port %}:{{ c.premiere_extremite.port }}{% endif %}
+                            ⇄
+                            {{ c.seconde_extremite.ip }}{% if c.seconde_extremite.port %}:{{ c.seconde_extremite.port }}{% endif %}
+                        </a>
+                    </td>
+                    <td>{{ c.protocole }}</td>
+                    <td>
+                        {% if c.port_service is not none %}
+                            <span class="mono">{{ c.port_service }}</span>
+                            {%- if c.service_probable %} <span class="petit">({{ c.service_probable }})</span>{% endif %}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ c.nb_paquets }}</td>
+                    <td>{{ c.octets }} o</td>
+                    <td>{{ c.duree }} s</td>
+                    <td><span class="etat etat-{{ c.etat | replace(' ', '-') }}">{{ c.etat }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <details class="legende">
+        <summary>Comment ces communications sont-elles constituées ?</summary>
+        <dl>
+            <dt>Le regroupement</dt>
+            <dd>Deux paquets appartiennent à la même communication s'ils partagent le même
+                protocole et les mêmes deux couples « adresse:port ». L'ordre est sans
+                importance : <span class="mono">A → B</span> et <span class="mono">B → A</span>
+                forment une seule conversation.</dd>
+            <dt>Le protocole</dt>
+            <dd><strong>TCP</strong> : connexion fiable, avec ouverture et fermeture.
+                <strong>UDP</strong> : envoi sans connexion — c'est le cas du DNS.</dd>
+            <dt>Le service</dt>
+            <dd>Le port du service est déduit : si l'un des deux ports est un port connu
+                (443, 53, 22…), c'est lui ; sinon on retient le plus petit, car les clients
+                choisissent un port élevé au hasard. <strong>C'est une déduction, pas une
+                certitude.</strong></dd>
+            <dt>L'état</dt>
+            <dd>Déduit des drapeaux TCP réellement observés :
+                <strong>en cours</strong> (échange en cours),
+                <strong>terminée</strong> (un FIN a été vu — fermeture propre),
+                <strong>refusée</strong> (un RST a été vu — connexion rejetée),
+                <strong>inactive</strong> (plus rien depuis plus d'une minute, sans fermeture).</dd>
+            <dt>La durée</dt>
+            <dd>Temps écoulé entre le premier et le dernier paquet de la communication.
+                Une communication peut durer plusieurs minutes tout en restant silencieuse
+                par moments : c'est ce que mesure la durée d'inactivité.</dd>
+        </dl>
+    </details>
+</section>
+{% endif %}
+{% endblock %}

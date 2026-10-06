@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block titre %}Protocoles et ports — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+<section class="carte">
+    <h2>Ce que le programme sait, et d'où il le tient</h2>
+    <p>
+        Rien dans cette application ne repose sur une connaissance cachée. Quand l'analyseur
+        écrit qu'un port est « généralement associé à » un service, cette association vient
+        d'ici — et elle est discutable.
+    </p>
+    <p class="petit">
+        Ces fiches décrivent des conventions, pas des certitudes. Un service peut très bien
+        être déplacé sur un autre port : c'est courant, et c'est pourquoi l'application écrit
+        toujours « généralement » plutôt que « est ».
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Les protocoles</h2>
+    {% for p in protocoles %}
+    <div class="fiche">
+        <h3>{{ p.nom }}{% if p.categorie %} <span class="petit">({{ p.categorie }})</span>{% endif %}</h3>
+        <dl>
+            <dt>Son rôle</dt>
+            <dd>{{ p.role }}</dd>
+            {% if p.ce_qu_on_observe %}
+            <dt>Ce que l'on observe</dt>
+            <dd>{{ p.ce_qu_on_observe }}</dd>
+            {% endif %}
+            {% if p.ce_que_ca_signifie %}
+            <dt>Ce que cela signifie</dt>
+            <dd>{{ p.ce_que_ca_signifie }}</dd>
+            {% endif %}
+            {% if p.limite %}
+            <dt>Sa limite</dt>
+            <dd>{{ p.limite }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+    {% endfor %}
+</section>
+
+<section class="carte">
+    <h2>Les ports courants</h2>
+    <p class="petit">Un port désigne le service visé sur une machine. L'adresse dit <em>qui</em>, le port dit <em>quoi</em>.</p>
+    <div class="defilement">
+        <table>
+            <thead>
+                <tr><th>Port</th><th>Service</th><th>Remarque</th></tr>
+            </thead>
+            <tbody>
+                {% for port, fiche in ports %}
+                <tr>
+                    <td class="mono">{{ port }}</td>
+                    <td>{{ fiche.0 }}</td>
+                    <td class="petit">{{ fiche.1 or "" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% endblock %}
