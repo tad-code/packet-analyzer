@@ -12,6 +12,13 @@
     {% if capture_en_cours %}<meta http-equiv="refresh" content="2">{% endif %}
 </head>
 <body>
+{% if lecture_seule %}
+<div class="bandeau-lecture-seule">
+    Mode lecture seule — cette page montre la dernière capture enregistrée, et non
+    le trafic de cette machine. Un serveur distant n'a pas accès à une carte réseau :
+    l'observation se fait sur votre ordinateur, la consultation peut se faire ici.
+</div>
+{% endif %}
 
 <header>
     <div class="conteneur entete">
@@ -36,6 +43,8 @@
            class="{{ 'actif' if page == 'capture' }}">Capture</a>
         <a href="{{ url_for('routes.historique') }}"
            class="{{ 'actif' if page == 'historique' }}">Historique</a>
+        <a href="{{ url_for('routes.alertes') }}"
+           class="{{ 'actif' if page == 'alertes' }}">Alertes</a>
         <a href="{{ url_for('routes.protocoles') }}"
            class="{{ 'actif' if page == 'protocoles' }}">Protocoles</a>
         <a href="{{ url_for('routes.glossaire') }}"

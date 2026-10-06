@@ -75,6 +75,19 @@ def creer_application():
     from explication.faits import adresse_complete
     application.jinja_env.filters["adresse"] = adresse_complete
 
+    # Un filtre pour les volumes : les gabarits repetent sinon le meme calcul
+    # dans chaque tableau, avec le risque d'oublier un cas.
+    def volume(octets):
+        if octets is None:
+            return "—"
+        if octets >= 1024 * 1024:
+            return f"{octets / (1024 * 1024):.2f} Mo"
+        if octets >= 1024:
+            return f"{octets / 1024:.1f} Ko"
+        return f"{octets} o"
+
+    application.jinja_env.filters["volume"] = volume
+
     return application
 
 

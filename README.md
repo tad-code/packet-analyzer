@@ -3,14 +3,14 @@
 Un outil qui lit le trafic réseau, le structure, et **explique en langage humain**
 ce qui se passe — au lieu d'afficher des lignes techniques illisibles.
 
-> **État actuel : version 3 — expliquer.**
+> **État actuel : version 4 — détecter et enrichir.**
 > Capture réelle, regroupement en communications, enregistrement dans Supabase,
-> historique, et **explication en langage humain** de chaque communication.
+> historique, **explication en langage humain**, **alertes produites par des règles**,
+> **identification des adresses distantes**, et **mode en ligne en lecture seule**.
 >
-> **Vérifié :** 72 tests unitaires, 53 contrôles fonctionnels, et **14 contrôles de
-> bout en bout** contre la base réelle (écriture, relecture, tri, suppression en cascade).
->
-> La détection et l'enrichissement par une API arrivent dans la version suivante.
+> **Vérifié :** 105 tests unitaires, 53 contrôles fonctionnels, et **18 contrôles de
+> bout en bout** contre la base réelle (écriture, relecture, tri, suppression en cascade,
+> alertes). L'enrichissement a été exercé sur de vraies adresses.
 
 ---
 
@@ -141,6 +141,58 @@ Ces deux pages existent pour une raison : **rien dans l'application ne doit repo
 sur une connaissance cachée**. Ce que le programme affirme, l'utilisateur peut le lire
 et le contester.
 
+## La détection
+
+Six règles examinent l'ensemble des communications et produisent des **alertes**.
+Elles ne disent jamais « c'est une attaque » : chacune énonce ce qu'elle a observé,
+ce qu'elle en déduit, et ce qu'il faudrait vérifier.
+
+| Règle | Ce qu'elle repère |
+|---|---|
+| `refus-repetes` | Plusieurs connexions refusées — recherche de services, ou logiciel qui réessaie |
+| `service-en-clair` | Telnet, FTP, HTTP : le contenu circule sans chiffrement |
+| `connexions-repetees` | Une même destination contactée par des échanges brefs et réguliers |
+| `destinations-multiples` | Une machine locale échange avec un grand nombre de serveurs |
+| `volume-concentre` | Une seule communication transporte la majeure partie du volume |
+| `service-non-identifie` | Un port inconnu, avec un échange soutenu |
+
+Trois gravités : **information**, **attention**, **vigilance**. Les alertes sont
+enregistrées avec la capture, pour la même raison que les résumés : les règles
+évolueront, et l'historique ne doit pas changer sous les pieds de l'utilisateur.
+
+> Une règle qui échoue est ignorée, les autres continuent. Une alerte manquante est
+> fâcheuse ; un plantage qui masque tout l'est davantage.
+
+## L'enrichissement
+
+Les adresses distantes sont identifiées par **ip-api.com**, qui ne demande aucune clé.
+
+- **Les adresses locales et de multidiffusion ne sont pas interrogées.** Une adresse
+  192.168.x.x n'appartient à aucun pays : l'envoyer à un service externe révèlerait la
+  structure du réseau sans rien apprendre en retour.
+- **Les adresses sont interrogées en lot**, cent par requête. Une requête par adresse
+  épuiserait le quota autorisé en quelques secondes.
+- **Seules les réponses obtenues sont mises en cache.** Une panne passagère n'est pas
+  figée dans le fichier.
+
+L'enrichissement est un **confort**, jamais une dépendance. S'il échoue, l'analyse
+reste complète : les adresses s'affichent, sans pays ni opérateur.
+
+## Les deux modes
+
+**Une seule base de code, deux fonctionnements.**
+
+| | Mode local (`CAPTURE_LOCALE=1`) | Mode en ligne |
+|---|---|---|
+| Où | votre machine | un serveur distant |
+| Capture | possible | **impossible** — pas de carte réseau |
+| Source des données | le tampon de capture | la dernière capture enregistrée |
+| Usage | observer son propre réseau | consulter ce qui a été observé ailleurs |
+
+Un serveur distant ne peut pas capturer de paquets : ce n'est pas un réglage, c'est
+une limite technique. L'interface le dit à l'utilisateur au lieu de l'afficher comme
+une panne.
+
 ## La base de données
 
 L'application écrit dans **Supabase**, par son API REST.
@@ -166,6 +218,10 @@ SUPABASE_SERVICE_ROLE_KEY=***
 **3. Créer les tables.** Supabase → **SQL Editor** → **New query** → coller le
 contenu de `sql/a-coller.sql` → **Run**. La version commentée, qui justifie chaque
 table, est dans `sql/schema.sql`.
+
+**3 bis. La table des alertes.** Supabase → **SQL Editor** → coller le contenu de
+`sql/ajouter-alertes.sql` → **Run**. *(Inutile si vous exécutez `sql/a-coller.sql`,
+qui contient déjà les trois tables.)*
 
 **4. Vérifier.** `python tools/verifier_ecriture_supabase.py` — écrit, relit,
 supprime, et contrôle l'effacement en cascade. Les données d'essai sont retirées.

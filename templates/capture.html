@@ -4,6 +4,22 @@
 
 {% block contenu %}
 
+{% if lecture_seule %}
+<section class="carte">
+    <h2>Capture impossible depuis ce serveur</h2>
+    <p>
+        Cette application tourne sur un serveur distant, qui n'a accès à aucune carte
+        réseau : il ne peut pas observer de trafic. C'est une limite technique, pas un
+        réglage.
+    </p>
+    <p class="petit">
+        L'observation se fait sur votre ordinateur, en mode local. Les captures enregistrées
+        remontent ensuite ici, où elles se consultent. Pour observer votre propre réseau,
+        lancez l'application chez vous et ouvrez <span class="mono">http://127.0.0.1:5000</span>.
+    </p>
+</section>
+{% endif %}
+
 {# --- Ce que fait cet ecran ------------------------------------------------ #}
 <section class="carte">
     <h2>Que fait cet écran ?</h2>

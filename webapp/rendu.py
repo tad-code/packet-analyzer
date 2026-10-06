@@ -17,7 +17,7 @@ from flask import render_template
 from config import config
 
 # Version affichee en pied de page.
-VERSION = "3.0 — expliquer"
+VERSION = "4.0 — détecter et enrichir"
 
 
 def rendre(gabarit, page, **contexte):
@@ -32,6 +32,10 @@ def rendre(gabarit, page, **contexte):
         "page": page,
         "version": VERSION,
         "mode": "local" if config.capture_locale else "en ligne",
+        # En ligne, aucune capture ne peut avoir lieu sur le serveur : l'interface
+        # affiche ce qu'une autre machine a enregistre. Le dire evite de laisser
+        # croire que l'on regarde sa propre connexion.
+        "lecture_seule": not config.capture_locale,
         "capture_possible": config.capture_locale,
     }
     communs.update(contexte)

@@ -238,3 +238,52 @@ ol.etapes .mono, .bandeau .mono { color: var(--texte); }
     margin-top: 10px;
 }
 .fiche dd { margin: 3px 0 0; line-height: 1.6; }
+
+
+/* --- Version 4 : les alertes ---------------------------------------------- */
+
+.alerte { border-left: 3px solid var(--bord); }
+.alerte-information { border-left-color: #4a9eff; }
+.alerte-attention   { border-left-color: #e0aa4a; }
+.alerte-vigilance   { border-left-color: #e06a5a; }
+
+.gravite {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+.gravite-information { background: rgba(74, 158, 255, 0.16);  color: #6cb2ff; }
+.gravite-attention   { background: rgba(230, 170, 60, 0.16);  color: #e0aa4a; }
+.gravite-vigilance   { background: rgba(224, 106, 90, 0.16);  color: #e08070; }
+
+.tableau-alerte { width: 100%; border-collapse: collapse; margin: 14px 0; }
+.tableau-alerte th {
+    text-align: left;
+    width: 210px;
+    padding: 7px 12px 7px 0;
+    vertical-align: top;
+    font-weight: 500;
+    color: var(--texte-doux);
+    font-size: 0.86rem;
+}
+.tableau-alerte td { padding: 7px 0; vertical-align: top; line-height: 1.55; }
+
+.absent { color: var(--texte-doux); font-style: italic; }
+
+
+/* --- Version 4 : le mode en ligne ----------------------------------------- */
+
+.bandeau-lecture-seule {
+    background: rgba(230, 170, 60, 0.12);
+    border-bottom: 1px solid rgba(230, 170, 60, 0.3);
+    color: var(--texte-doux);
+    padding: 11px 24px;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    text-align: center;
+}

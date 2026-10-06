@@ -74,6 +74,12 @@ def depuis_ligne_enregistree(ligne):
         "fin_lisible": _lisible(ligne.get("fin")),
         "drapeaux_vus": ligne.get("drapeaux_vus"),
         "etat": ligne.get("etat"),
+
+        # Le regroupement marque une communication « active » tant qu'elle
+        # echange encore ; la base conserve un etat, pas ce booleen. On le
+        # reconstruit a partir de l'etat, sinon les statistiques — qui s'en
+        # servent — echouent sur des donnees venues de l'historique.
+        "active": ligne.get("etat") == "en cours",
         # Ces deux champs ne sont pas conserves en base. On ne les invente pas :
         # l'explication signalera leur absence, et c'est volontaire — mieux vaut
         # une lacune annoncee qu'une valeur fabriquee.

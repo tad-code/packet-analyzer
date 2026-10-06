@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block titre %}Alertes — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+<section class="carte">
+    <h2>Ce que les règles signalent</h2>
+    <p>
+        Une alerte n'est pas un verdict. Chacune dit ce qui a été observé, ce qu'elle
+        en déduit, et ce qu'il faudrait vérifier. Les règles se trompent : elles
+        signalent des situations qui méritent un coup d'œil, jamais des attaques.
+    </p>
+    <p class="petit">
+        {% if nb_communications %}
+        Analyse portant sur {{ nb_communications }} communication{{ "s" if nb_communications > 1 }}
+        observée{{ "s" if nb_communications > 1 }} pendant la capture en cours.
+        {% else %}
+        Aucune communication n'est conservée pour l'instant. Lancez une capture pour
+        que les règles aient quelque chose à examiner.
+        {% endif %}
+        Les six règles appliquées sont décrites en bas de cette page.
+    </p>
+</section>
+
+{% if not alertes %}
+<section class="carte">
+    <p class="bandeau neutre">
+        <strong>Aucune règle ne s'est déclenchée.</strong>
+        Sur une capture de navigation ordinaire, c'est le résultat attendu — et c'est
+        une information en soi. Un outil qui alerte en permanence ne dit plus rien.
+    </p>
+</section>
+{% endif %}
+
+{% for a in alertes %}
+<section class="carte alerte alerte-{{ a.gravite }}">
+    <h2>
+        <span class="gravite gravite-{{ a.gravite }}">{{ a.gravite }}</span>
+        {{ a.titre }}
+    </h2>
+
+    <p>{{ a.explication }}</p>
+
+    <table class="tableau-alerte">
+        <tr>
+            <th>Sur quoi elle se fonde</th>
+            <td>{{ a.base }}</td>
+        </tr>
+        <tr>
+            <th>Règle appliquée</th>
+            <td class="mono">{{ a.regle }}</td>
+        </tr>
+        <tr>
+            <th>Communications concernées</th>
+            <td>{{ a.nb_communications }}</td>
+        </tr>
+        {% if a.conseil %}
+        <tr>
+            <th>À faire</th>
+            <td>{{ a.conseil }}</td>
+        </tr>
+        {% endif %}
+    </table>
+
+    {% if a.communications %}
+    <h3>Les communications en cause</h3>
+    <div class="defilement">
+        <table>
+            <thead>
+                <tr>
+                    <th>Qui parle à qui</th>
+                    <th>Protocole</th>
+                    <th>Paquets</th>
+                    <th>Volume</th>
+                    <th>Où se trouve l'adresse distante</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in a.communications %}
+                <tr>
+                    <td class="mono">
+                        {{ c.premiere_extremite.ip | adresse(c.premiere_extremite.port) }}
+                        ⇄
+                        {{ c.seconde_extremite.ip | adresse(c.seconde_extremite.port) }}
+                    </td>
+                    <td>{{ c.protocole }}</td>
+                    <td>{{ c.nb_paquets }}</td>
+                    <td>{{ c.octets | volume }}</td>
+                    <td class="petit">
+                        {% set info = infos.get(c.seconde_extremite.ip) or infos.get(c.premiere_extremite.ip) %}
+                        {% if info %}
+                            {{ resume_enrichissement(info) or "aucune information" }}
+                        {% else %}
+                            <span class="absent">non identifiée</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</section>
+{% endfor %}
+
+<section class="carte">
+    <h2>Les règles appliquées</h2>
+    <p class="petit">
+        Toutes les règles sont présentées ici, y compris celles qui ne se sont pas
+        déclenchées. Savoir ce qui a été cherché fait partie de l'information.
+    </p>
+    <dl class="fiche">
+        <dt>refus-repetes</dt>
+        <dd>Plusieurs connexions refusées. C'est la forme que prend une recherche de
+            services ouverts — ou un logiciel qui réessaie après un échec.</dd>
+
+        <dt>service-en-clair</dt>
+        <dd>Un service dont le contenu circule sans chiffrement (Telnet, FTP, HTTP),
+            avec un volume qui dépasse quelques kilo-octets.</dd>
+
+        <dt>connexions-repetees</dt>
+        <dd>Une même destination contactée de nombreuses fois par des échanges très
+            courts. Cette régularité est celle d'un logiciel qui interroge un serveur
+            périodiquement.</dd>
+
+        <dt>destinations-multiples</dt>
+        <dd>Une machine de votre réseau échange avec un grand nombre d'adresses
+            distantes. Une seule page web moderne en contacte souvent des dizaines :
+            c'est fréquemment normal.</dd>
+
+        <dt>volume-concentre</dt>
+        <dd>Une seule communication transporte la majeure partie du volume observé.</dd>
+
+        <dt>service-non-identifie</dt>
+        <dd>Un port absent de la table des services connus, avec un échange soutenu.
+            Un port inconnu n'est pas un port dangereux.</dd>
+    </dl>
+    <p class="petit">
+        <a href="{{ url_for('routes.glossaire') }}">Le glossaire</a> définit le vocabulaire employé,
+        et <a href="{{ url_for('routes.protocoles') }}">la page des protocoles</a> détaille ce que
+        le programme sait des ports et des services.
+    </p>
+</section>
+
+{% endblock %}

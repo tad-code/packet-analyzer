@@ -171,6 +171,33 @@ if id_cree:
     verifier("le detail montre les communications", "TCP" in detail or "UDP" in detail)
 
 # ---------------------------------------------------------------------------
+# 4 bis. Les alertes
+# ---------------------------------------------------------------------------
+print()
+print("4 bis. Alertes")
+
+code, page = demander("/alertes")
+verifier("la page des alertes repond", code == 200, f"code {code}")
+verifier("elle decrit les regles appliquees",
+         "refus-repetes" in page and "service-en-clair" in page)
+verifier("elle dit quand aucune regle ne se declenche",
+         "Aucune règle ne s'est déclenchée" in page or "gravite" in page or "attention" in page)
+
+# Les alertes de la capture en cours sont-elles enregistrees ?
+try:
+    nb_alertes = supabase.compter("reseau_alertes", f"analyse_id=eq.{id_cree}") if id_cree else 0
+    print(f"       alertes enregistrees pour la capture : {nb_alertes}")
+except Exception as e:
+    nb_alertes = None
+    print(f"       (table des alertes absente : {str(e)[:70]})")
+
+if nb_alertes is None:
+    print("       -> executer sql/ajouter-alertes.sql dans l'editeur SQL de Supabase")
+elif nb_alertes == 0:
+    print("       -> aucune alerte : sur du trafic ordinaire, c'est le resultat attendu")
+
+
+# ---------------------------------------------------------------------------
 # 5. Nettoyage
 # ---------------------------------------------------------------------------
 print()

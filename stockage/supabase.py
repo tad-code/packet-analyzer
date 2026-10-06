@@ -293,6 +293,36 @@ def supprimer(table, filtre):
         return []
 
 
+def enregistrer_alertes(analyse_id, alertes):
+    """
+    Enregistre les alertes produites par les regles, pour une capture donnee.
+
+    On conserve ce que les regles disaient AU MOMENT de la capture. Les regles
+    evolueront : sans cela, l'historique d'hier changerait a chaque ajustement de
+    seuil, et deux captures ne seraient plus comparables.
+
+    Une alerte ne porte pas la liste de ses communications : on conserve son
+    compte. Le detail se retrouve en rejouant la regle sur la capture — la table
+    des alertes n'a pas a dupliquer celle des communications.
+    """
+    if not alertes:
+        return 0
+
+    lignes = [{
+        "analyse_id": analyse_id,
+        "regle": a.get("regle"),
+        "gravite": a.get("gravite"),
+        "titre": a.get("titre"),
+        "explication": a.get("explication"),
+        "base": a.get("base"),
+        "conseil": a.get("conseil"),
+        "nb_communications": a.get("nb_communications", 0),
+    } for a in alertes]
+
+    ecrites = inserer("reseau_alertes", lignes)
+    return len(ecrites or [])
+
+
 # ---------------------------------------------------------------------------
 # Enregistrement d'une analyse
 # ---------------------------------------------------------------------------

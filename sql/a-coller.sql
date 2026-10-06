@@ -40,3 +40,20 @@ create index if not exists idx_analyses_debut
     on reseau_analyses (debut desc);
 alter table reseau_analyses       enable row level security;
 alter table reseau_communications enable row level security;
+create table if not exists reseau_alertes (
+    id                bigint generated always as identity primary key,
+    analyse_id        bigint not null
+                      references reseau_analyses (id) on delete cascade,
+    regle             text not null,
+    gravite           text not null,
+    titre             text not null,
+    explication       text,
+    base              text,
+    conseil           text,
+    nb_communications integer not null default 0,
+    constraint gravite_alerte_valide
+        check (gravite in ('information', 'attention', 'vigilance'))
+);
+create index if not exists idx_alertes_analyse
+    on reseau_alertes (analyse_id);
+alter table reseau_alertes enable row level security;

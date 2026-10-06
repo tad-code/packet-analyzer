@@ -263,6 +263,24 @@ def test_une_adresse_ipv6_sans_port_est_encadree():
     assert adresse_complete("2001:db8::1") == "[2001:db8::1]"
 
 
+def test_les_deux_formes_d_une_communication_donnent_leurs_adresses():
+    """
+    Piege rencontre en branchant l'enrichissement : la forme vivante et la forme
+    enregistree ne nomment pas leurs extremites pareil. Lire le mauvais nom ne
+    provoque aucune erreur — juste une liste vide, et une colonne muette.
+    """
+    from analyse.adresses import adresses_de
+
+    vivante = {"premiere_extremite": {"ip": "192.168.1.6", "port": 51000},
+               "seconde_extremite": {"ip": "93.184.216.34", "port": 443}}
+    enregistree = {"ip_premiere": "192.168.1.6", "ip_seconde": "93.184.216.34"}
+
+    assert adresses_de(vivante) == ["192.168.1.6", "93.184.216.34"]
+    assert adresses_de(enregistree) == ["192.168.1.6", "93.184.216.34"]
+    assert adresses_de({}) == []
+    assert adresses_de(None) == []
+
+
 def test_une_adresse_inconnue_ne_donne_pas_de_texte_trompeur():
     """On rend None : c'est _valeur() qui decidera comment dire l'absence."""
     from explication.faits import adresse_complete

@@ -31,8 +31,11 @@ from capture.interfaces import lister_interfaces, proposer_interface
 from capture.moteur import ErreurCapture, MoteurCapture
 from communications.regroupement import regrouper, repondre_questions, statistiques
 from config import config
+from detection import analyser as analyser_alertes
+from enrichissement import adresses as enrichissement
 from explication import expliquer
 from explication.adaptateur import depuis_ligne_enregistree
+from analyse.adresses import adresses_de
 from explication.faits import adresse_complete
 from explication.glossaire import GLOSSAIRE
 from stockage import supabase
@@ -106,16 +109,45 @@ def _contexte_capture(interface_proposee=None):
     }
 
 
+def _derniere_capture():
+    """Rend l'analyse enregistree la plus recente, ou None."""
+    if not supabase.disponible()[0]:
+        return None
+    try:
+        lignes = supabase.lire("reseau_analyses", ordre="id.desc", limite=1)
+    except ErreurBase:
+        return None
+    return lignes[0] if lignes else None
+
+
 def _communications():
     """
-    Regroupe les paquets conserves en communications.
+    Les communications a afficher, selon le mode.
 
-    Le regroupement est refait a chaque affichage, a partir du tampon. C'est
-    volontaire : la fonction est pure et rapide, et il n'y a ainsi aucun etat
-    intermediaire a maintenir ni a synchroniser. Avec un tampon de quelques
-    centaines de paquets, le cout est negligeable.
+    EN LOCAL, on regroupe les paquets conserves dans le tampon. Le regroupement
+    est refait a chaque affichage : la fonction est pure et rapide, et il n'y a
+    donc aucun etat intermediaire a maintenir.
+
+    EN LIGNE, le serveur n'a pas de carte reseau : son tampon est vide pour
+    toujours. On lit donc la derniere capture enregistree dans la base. C'est ce
+    qui donne son sens au mode en ligne — montrer ce qu'une autre machine a
+    observe, sans jamais capturer soi-meme.
     """
-    return regrouper(_paquets_analyses())
+    if config.capture_locale:
+        return regrouper(_paquets_analyses())
+
+    analyse = _derniere_capture()
+    if not analyse:
+        return []
+    try:
+        lignes = supabase.lire("reseau_communications",
+                               f"analyse_id=eq.{analyse['id']}", limite=500)
+    except ErreurBase:
+        return []
+
+    # La meme adaptation que pour l'historique : une seule forme pour le moteur
+    # et pour les regles.
+    return [depuis_ligne_enregistree(l) for l in lignes]
 
 
 # ---------------------------------------------------------------------------
@@ -345,6 +377,15 @@ def enregistrer():
                       erreur_detail=e.detail,
                       **_contexte_capture())
 
+    # Les alertes sont enregistrees apres l'analyse, et leur echec ne remet pas
+    # en cause l'enregistrement de la capture : on signale, sans perdre le reste.
+    try:
+        contexte = statistiques(communications)
+        supabase.enregistrer_alertes(identifiant,
+                                     analyser_alertes(communications, contexte))
+    except Exception as e:                          # noqa: BLE001
+        print(f"  (alertes non enregistrees : {type(e).__name__} — {str(e)[:90]})")
+
     return redirect(url_for("routes.historique_detail", analyse_id=identifiant))
 
 
@@ -398,6 +439,44 @@ def historique_communication(analyse_id, communication_id):
                   capture_en_cours=moteur.en_cours())
 
 
+@routes.route("/alertes")
+def alertes():
+    """
+    Ce que les regles signalent sur la capture en cours.
+
+    L'enrichissement n'est demande que pour les adresses mises en cause par une
+    alerte, et pour vingt au plus. Interroger l'API pour toutes les adresses
+    affichees rendrait chaque chargement de page lent, et consommerait un quota
+    pour des adresses qui n'interessent personne.
+    """
+    communications = _communications()
+    contexte = statistiques(communications)
+    trouvees = analyser_alertes(communications, contexte)
+
+    adresses = []
+    for alerte in trouvees:
+        for c in alerte["communications"]:
+            for ip in adresses_de(c):
+                if ip not in adresses and enrichissement.est_publique(ip):
+                    adresses.append(ip)
+    adresses = adresses[:20]
+
+    infos = {}
+    if adresses:
+        try:
+            infos = enrichissement.enrichir(adresses)
+        except Exception as e:                      # noqa: BLE001
+            print(f"  (enrichissement indisponible : {type(e).__name__})")
+
+    return rendre("alertes.html", "alertes",
+                  alertes=trouvees,
+                  infos=infos,
+                  resume_enrichissement=enrichissement.resume,
+                  adresse_complete=adresse_complete,
+                  capture_en_cours=moteur.en_cours(),
+                  nb_communications=len(communications))
+
+
 @routes.route("/protocoles")
 def protocoles():
     """
@@ -425,7 +504,7 @@ def health():
     """Etat du service, en JSON."""
     return jsonify({
         "etat": "ok",
-        "version": "3.0",
+        "version": "4.0",
         **config.resume(),
         "capture_en_cours": moteur.en_cours(),
         "interface": moteur.interface(),
