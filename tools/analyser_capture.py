@@ -1,18 +1,4 @@
-"""
-Appliquer les regles de detection a une capture enregistree.
 
-Usage :
-    python tools/analyser_capture.py          (la capture la plus recente)
-    python tools/analyser_capture.py 6        (la capture numero 6)
-
-Cet outil sert a deux choses :
-
-    - verifier que les regles se comportent correctement sur des donnees REELLES,
-      et non seulement sur les cas fabriques par les tests ;
-    - lire le detail des alertes sans passer par le navigateur.
-
-Il ne modifie rien : il lit la base et affiche.
-"""
 
 import sys
 from pathlib import Path
@@ -20,20 +6,17 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RACINE))
 
-from analyse.adresses import adresse_complete  # noqa: E402
-from communications.regroupement import statistiques  # noqa: E402
-from detection import analyser  # noqa: E402
-from explication.adaptateur import depuis_ligne_enregistree  # noqa: E402
-from stockage import supabase  # noqa: E402
+from analyse.adresses import adresse_complete
+from communications.regroupement import statistiques
+from detection import analyser
+from explication.adaptateur import depuis_ligne_enregistree
+from stockage import supabase
 
 disponible, raison = supabase.disponible()
 if not disponible:
     print(f"  Base indisponible : {raison}")
     raise SystemExit(1)
 
-# ---------------------------------------------------------------------------
-# Quelle capture analyser ?
-# ---------------------------------------------------------------------------
 if len(sys.argv) > 1:
     analyse_id = int(sys.argv[1])
 else:
@@ -63,9 +46,6 @@ print(f"  debut           : {analyse.get('debut')}")
 print(f"  paquets vus     : {analyse.get('nb_paquets')}")
 print(f"  communications  : {len(communications)} lues sur {analyse.get('nb_communications')}")
 
-# ---------------------------------------------------------------------------
-# Les alertes
-# ---------------------------------------------------------------------------
 alertes = analyser(communications, contexte)
 
 print()
@@ -93,10 +73,7 @@ else:
             print(f"        · et {a['nb_communications'] - 3} autre(s)")
         print()
 
-# ---------------------------------------------------------------------------
-# Ce qui N'a PAS declenche
-# ---------------------------------------------------------------------------
-from detection.regles import REGLES  # noqa: E402
+from detection.regles import REGLES
 
 declenchees = {a["regle"] for a in alertes}
 print("  Regles qui ne se sont pas declenchees :")

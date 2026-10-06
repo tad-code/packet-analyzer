@@ -1,16 +1,4 @@
-"""
-Recuperer la procedure officielle pour trouver les cles d'API Supabase.
 
-Le tableau de bord Supabase change souvent de libelles. Plutot que de decrire un
-ecran de memoire et d'envoyer l'utilisateur dans la mauvaise direction, on lit la
-documentation actuelle.
-
-On cherche en particulier :
-
-    - ou se trouvent les cles dans le tableau de bord ;
-    - si une cle secrete peut etre relue apres sa creation ;
-    - comment en creer une nouvelle.
-"""
 
 import html as module_html
 import re
@@ -26,7 +14,6 @@ ENTETES = {
 }
 client = httpx.Client(headers=ENTETES, follow_redirects=True, timeout=40.0)
 
-
 def propre(fragment):
     t = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", fragment, flags=re.S | re.I)
     t = re.sub(r"<li[^>]*>", "\n  - ", t, flags=re.I)
@@ -35,7 +22,6 @@ def propre(fragment):
     t = module_html.unescape(t)
     t = re.sub(r"[ \t]{2,}", " ", t)
     return "\n".join(l.strip() for l in t.splitlines() if l.strip())
-
 
 PAGES = [
     "https://supabase.com/docs/guides/api/api-keys",
@@ -60,7 +46,6 @@ for url in PAGES:
 
     texte = propre(r.text)
 
-    # On ne garde que les passages evocateurs.
     interessants = []
     for lignes in texte.split("\n"):
         bas = lignes.lower()

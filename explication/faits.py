@@ -1,58 +1,27 @@
-"""
-Extraction des faits observes.
 
-Ce module repond a une seule question :
-
-    « Qu'est-ce que l'analyseur a REELLEMENT vu ? »
-
-Aucune deduction, aucune supposition, aucune phrase d'interpretation. Un fait est
-une valeur extraite d'un paquet, avec le nom du champ dont elle vient.
-
-La regle qui gouverne tout ce fichier : un champ absent donne « non disponible ».
-On n'invente jamais une valeur, et on ne met jamais un tiret muet : l'utilisateur
-doit savoir que l'information manque, et non croire qu'elle est vide.
-
-C'est la securite principale contre le risque d'inventer une conclusion. Elle est
-structurelle, et non une simple recommandation : l'interpretation, elle, vit dans
-phrases.py et ne peut lire que ce que ce module a produit.
-"""
 
 from analyse.protocoles import nom_du_port
 
-# Ce qu'on affiche quand une information n'a pas ete observee.
 INDISPONIBLE = "non disponible"
 
-
 def _valeur(valeur, unite="", manquant=INDISPONIBLE):
-    """Presente une valeur, ou dit clairement qu'elle manque."""
+
     if valeur is None or valeur == "":
         return manquant
     if unite:
         return f"{valeur} {unite}"
     return str(valeur)
 
-
-# Le formatage des adresses vit dans « analyse » : le regroupement en a
-# besoin aussi, et il ne doit pas dependre de l'etage des phrases.
-from analyse.adresses import adresse_complete  # noqa: F401
-
+from analyse.adresses import adresse_complete
 
 def _extremite(extremite):
-    """
-    Presente une extremite « adresse:port », ou None si elle est inconnue.
 
-    On rend None et non la chaine « non disponible » : c'est le role de _valeur()
-    de decider comment afficher une absence. Rendre ici une chaine deja formatee
-    faisait passer le fait pour disponible, alors que sa valeur disait le
-    contraire — le test l'a attrape.
-    """
     if not extremite:
         return None
     return adresse_complete(extremite.get("ip"), extremite.get("port"))
 
-
 def _volume(octets):
-    """Presente un volume dans une unite lisible, ou None s'il est inconnu."""
+
     if octets is None:
         return None
     if octets >= 1024 * 1024:
@@ -61,27 +30,16 @@ def _volume(octets):
         return f"{octets / 1024:.1f} Ko"
     return f"{octets} octets"
 
-
 def _duree(secondes):
-    """Presente une duree dans une unite lisible, ou None si elle est inconnue."""
+
     if secondes is None:
         return None
     if secondes >= 60:
         return f"{secondes / 60:.1f} min"
     return f"{secondes:.1f} s"
 
-
 def faits_observes(communication):
-    """
-    Rend la liste des faits observes pour une communication.
 
-    Chaque fait porte trois elements :
-
-        champ   : le nom du champ d'origine — c'est la traçabilite, on peut
-                  remonter jusqu'au paquet ;
-        libelle : ce que l'on a regarde ;
-        valeur  : ce que l'on a trouve, ou « non disponible ».
-    """
     faits = []
 
     def ajouter(champ, libelle, valeur):
@@ -117,19 +75,11 @@ def faits_observes(communication):
 
     return faits
 
-
 def faits_disponibles(communication):
-    """Nombre de faits réellement observes, et non « non disponible »."""
-    return sum(1 for f in faits_observes(communication) if f["disponible"])
-
+        return sum(1 for f in faits_observes(communication) if f["disponible"])
 
 def resume_chiffre(communication):
-    """
-    Resume chiffre : ce qui a ete observe, sans aucune interpretation.
 
-    Sert de phrase d'ouverture, et de point de depart a l'utilisateur qui veut
-    verifier par lui-meme.
-    """
     parties = []
 
     premiere = communication.get("premiere_extremite") or {}

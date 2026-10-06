@@ -1,38 +1,16 @@
-"""
-Point d'entree de l'application.
 
-Ce fichier fait quatre choses, et rien d'autre :
-
-    1. il cree l'application web ;
-    2. il y branche les routes ;
-    3. il definit ce qui s'affiche quand une erreur survient ;
-    4. il lance le serveur quand on execute le fichier directement.
-
-Toute la logique est ailleurs : ici, on ne fait que rassembler les morceaux.
-
-Pourquoi les pages d'erreur passent par le meme rendu que les autres pages : une
-page d'erreur sans menu ni habillage donne l'impression que l'application est
-casse. Le cahier des charges exige que l'utilisateur ne soit jamais confronte a
-un message incomprehensible.
-"""
 
 from flask import Flask
 
 from config import config
 from webapp.rendu import rendre
 
-
 def creer_application():
-    """Construit et configure l'application web."""
+
     application = Flask(__name__)
 
-    # --- Branchement des routes ---------------------------------------------
     from webapp.routes import routes
     application.register_blueprint(routes)
-
-    # --- Pages d'erreur -------------------------------------------------------
-    # Chaque cas est traite separement, avec un message en francais qui explique
-    # ce qui s'est passe et ce que l'utilisateur peut faire.
 
     @application.errorhandler(400)
     def demande_invalide(e):
@@ -69,14 +47,9 @@ def creer_application():
                       explication="Une erreur inattendue est survenue dans l'application.",
                       detail="L'incident a été signalé. Vous pouvez poursuivre votre travail."), 500
 
-    # Un filtre de gabarit, disponible dans toutes les pages. Sans lui, chaque
-    # gabarit formaterait les adresses a sa maniere — et l'un d'eux oublierait
-    # les crochets des adresses IPv6.
     from explication.faits import adresse_complete
     application.jinja_env.filters["adresse"] = adresse_complete
 
-    # Un filtre pour les volumes : les gabarits repetent sinon le meme calcul
-    # dans chaque tableau, avec le risque d'oublier un cas.
     def volume(octets):
         if octets is None:
             return "—"
@@ -90,10 +63,7 @@ def creer_application():
 
     return application
 
-
-# Instance utilisee par le serveur de developpement et par l'hebergeur.
 app = creer_application()
-
 
 if __name__ == "__main__":
     print()

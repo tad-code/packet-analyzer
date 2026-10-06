@@ -1,0 +1,402 @@
+==============================================================================
+  EXPLICATIONS DU CODE — webapp
+==============================================================================
+
+==============================================================================
+  webapp\__init__.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  __init__.py
+------------------------------------------------------------------------------
+
+Etage 8 du projet : l'interface web.
+
+
+
+==============================================================================
+  webapp\rendu.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  rendu.py
+------------------------------------------------------------------------------
+
+Rendu des pages.
+
+Toutes les pages passent par la fonction `rendre`. Elle injecte les elements
+communs a chaque page (le mode de fonctionnement, la page active pour le menu, la
+version) et evite de les repeter dans chaque route.
+
+Pourquoi c'est important : sans cette fonction unique, chaque page devrait
+recalculer elle-meme ces valeurs, et un oubli ferait disparaitre le menu ou le
+pied de page. Les pages d'erreur passent par ici aussi — sinon une erreur
+afficherait une page sans habillage, ce qui est justement le genre de chose que
+le cahier des charges interdit.
+
+
+------------------------------------------------------------------------------
+  fonction  rendre(gabarit, page, **contexte)
+------------------------------------------------------------------------------
+
+Produit une page HTML.
+
+    'gabarit' : le fichier de gabarit a utiliser.
+    'page'    : le nom de la page, qui sert a marquer l'onglet actif du menu.
+    'contexte': les donnees propres a la page.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 19
+    Version affichee en pied de page.
+    code concerné : VERSION = "4.0 — détecter et enrichir"
+
+Ligne 35
+    En ligne, aucune capture ne peut avoir lieu sur le serveur : l'interface
+    code concerné : # affiche ce qu'une autre machine a enregistre. Le dire evite de laisser
+
+Ligne 36
+    affiche ce qu'une autre machine a enregistre. Le dire evite de laisser
+    code concerné : # croire que l'on regarde sa propre connexion.
+
+Ligne 37
+    croire que l'on regarde sa propre connexion.
+    code concerné : "lecture_seule": not config.capture_locale,
+
+
+
+==============================================================================
+  webapp\routes.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  routes.py
+------------------------------------------------------------------------------
+
+Routes de l'application.
+
+Une route est une adresse que le navigateur peut demander. Chaque route fait
+trois choses, et rien de plus :
+
+    1. elle lit ce que l'utilisateur demande ;
+    2. elle appelle le module competent ;
+    3. elle rend une page.
+
+Toute la logique vit dans les autres modules. C'est ce qui rend ce fichier
+lisible : on y voit le plan de l'application, pas les details.
+
+Organisation des pages :
+
+    /                    tableau de bord : la vue generale
+    /capture             demarrer et arreter une capture
+    /communications      la liste des conversations observees
+    /communication/<cle> le detail d'une conversation, avec son explication
+    /protocoles          ce que le programme sait des protocoles
+    /glossaire           le vocabulaire employe, defini simplement
+    /historique          les captures enregistrees
+    /health              etat du service, en JSON
+
+
+------------------------------------------------------------------------------
+  fonction  _paquets_analyses()
+------------------------------------------------------------------------------
+
+Traduit les paquets bruts conserves en paquets analyses.
+
+    Un paquet illisible est ignore plutot que de faire echouer l'affichage : une
+    seule donnee abimee ne doit pas rendre toute la page inutilisable.
+
+
+------------------------------------------------------------------------------
+  fonction  _contexte_capture(interface_proposee)
+------------------------------------------------------------------------------
+
+Rassemble tout ce dont la page de capture a besoin.
+
+    Cette fonction existe parce qu'une regression a eu lieu : en ajoutant les
+    pages de communications, la route de capture avait ete reecrite sans les
+    paquets, et la liste s'affichait vide. Une seule source pour ce contexte
+    evite que les deux appels (affichage normal et signalement d'erreur)
+    divergent a nouveau.
+
+
+------------------------------------------------------------------------------
+  fonction  _derniere_capture()
+------------------------------------------------------------------------------
+
+Rend l'analyse enregistree la plus recente, ou None.
+
+
+------------------------------------------------------------------------------
+  fonction  _communications()
+------------------------------------------------------------------------------
+
+Les communications a afficher, selon le mode.
+
+    EN LOCAL, on regroupe les paquets conserves dans le tampon. Le regroupement
+    est refait a chaque affichage : la fonction est pure et rapide, et il n'y a
+    donc aucun etat intermediaire a maintenir.
+
+    EN LIGNE, le serveur n'a pas de carte reseau : son tampon est vide pour
+    toujours. On lit donc la derniere capture enregistree dans la base. C'est ce
+    qui donne son sens au mode en ligne — montrer ce qu'une autre machine a
+    observe, sans jamais capturer soi-meme.
+
+
+------------------------------------------------------------------------------
+  fonction  accueil()
+------------------------------------------------------------------------------
+
+Vue generale : les chiffres essentiels et les dernieres communications.
+
+
+------------------------------------------------------------------------------
+  fonction  communications()
+------------------------------------------------------------------------------
+
+Liste des conversations observees.
+
+
+------------------------------------------------------------------------------
+  fonction  communication_detail(cle)
+------------------------------------------------------------------------------
+
+Detail d'une communication : informations techniques et reponses.
+
+    L'identifiant contient des caracteres particuliers (barres verticales,
+    deux-points) : le gabarit l'encode et Flask le decode. On ne stocke rien,
+    on retrouve la communication en la recalculant.
+
+
+------------------------------------------------------------------------------
+  fonction  capture()
+------------------------------------------------------------------------------
+
+Page de capture : choisir une carte reseau, demarrer, arreter.
+
+
+------------------------------------------------------------------------------
+  fonction  demarrer()
+------------------------------------------------------------------------------
+
+Demarre la capture sur l'interface choisie.
+
+
+------------------------------------------------------------------------------
+  fonction  arreter()
+------------------------------------------------------------------------------
+
+Arrete la capture en cours.
+
+
+------------------------------------------------------------------------------
+  fonction  vider()
+------------------------------------------------------------------------------
+
+Vide la liste des paquets conserves.
+
+
+------------------------------------------------------------------------------
+  fonction  historique()
+------------------------------------------------------------------------------
+
+Liste des captures enregistrees dans la base.
+
+    Cette page ne doit jamais faire tomber l'application : si la base est
+    injoignable, ou si les tables n'existent pas encore, on affiche une
+    explication et une marche a suivre. C'est l'un des cas d'erreur exiges par
+    le cahier des charges.
+
+
+------------------------------------------------------------------------------
+  fonction  historique_detail(analyse_id)
+------------------------------------------------------------------------------
+
+Detail d'une capture enregistree : ses communications.
+
+
+------------------------------------------------------------------------------
+  fonction  enregistrer()
+------------------------------------------------------------------------------
+
+Enregistre la capture en cours dans la base.
+
+    En cas d'echec, les paquets restent en memoire et l'utilisateur peut
+    reessayer : c'est le point important — une erreur d'enregistrement ne doit
+    pas faire disparaitre le travail d'analyse.
+
+
+------------------------------------------------------------------------------
+  fonction  historique_communication(analyse_id, communication_id)
+------------------------------------------------------------------------------
+
+Detail d'une communication enregistree, avec la meme explication qu'en direct.
+
+    Le resume affiche est celui CONSERVE au moment de la capture, et non celui que
+    les regles produiraient aujourd'hui : l'historique doit montrer ce qui a ete
+    constate ce jour-la. Le detail, lui, est recalcule depuis les champs conserves,
+    qui n'ont pas bouge.
+
+
+------------------------------------------------------------------------------
+  fonction  alertes()
+------------------------------------------------------------------------------
+
+Ce que les regles signalent sur la capture en cours.
+
+    L'enrichissement n'est demande que pour les adresses mises en cause par une
+    alerte, et pour vingt au plus. Interroger l'API pour toutes les adresses
+    affichees rendrait chaque chargement de page lent, et consommerait un quota
+    pour des adresses qui n'interessent personne.
+
+
+------------------------------------------------------------------------------
+  fonction  protocoles()
+------------------------------------------------------------------------------
+
+Ce que le programme sait des protocoles et des ports.
+
+    Cette page existe pour une raison precise : rien dans l'application ne doit
+    reposer sur une connaissance cachee. Ce que le programme affirme sur un port,
+    l'utilisateur peut le lire ici — et le contester.
+
+
+------------------------------------------------------------------------------
+  fonction  glossaire()
+------------------------------------------------------------------------------
+
+Le vocabulaire employe, defini en francais simple.
+
+
+------------------------------------------------------------------------------
+  fonction  health()
+------------------------------------------------------------------------------
+
+Etat du service, en JSON.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 47
+    Objet unique pour toute la duree de vie du programme.
+    code concerné : moteur = MoteurCapture(taille_tampon=config.taille_tampon)
+
+Ligne 95
+    le plus recent en premier
+
+Ligne 148
+    La meme adaptation que pour l'historique : une seule forme pour le moteur
+    code concerné : # et pour les regles.
+
+Ligne 149
+    et pour les regles.
+    code concerné : return [depuis_ligne_enregistree(l) for l in lignes]
+
+Ligne 153
+    ---------------------------------------------------------------------------
+    code concerné : # Le tableau de bord
+
+Ligne 154
+    Le tableau de bord
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 155
+    ---------------------------------------------------------------------------
+
+Ligne 170
+    ---------------------------------------------------------------------------
+    code concerné : # Les communications
+
+Ligne 171
+    Les communications
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 172
+    ---------------------------------------------------------------------------
+
+Ligne 211
+    ---------------------------------------------------------------------------
+    code concerné : # La capture
+
+Ligne 212
+    La capture
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 213
+    ---------------------------------------------------------------------------
+
+Ligne 255
+    ---------------------------------------------------------------------------
+    code concerné : # L'historique
+
+Ligne 256
+    L'historique
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 257
+    ---------------------------------------------------------------------------
+
+Ligne 283
+    Pour chaque analyse, on compte ses communications : le chiffre est
+    code concerné : # deja enregistre, on evite une requete supplementaire.
+
+Ligne 284
+    deja enregistre, on evite une requete supplementaire.
+    code concerné : except ErreurBase as e:
+
+Ligne 327
+    Les communications viennent de la base : on les remet sous la forme que le
+    code concerné : # moteur attend, afin qu'une seule et meme explication serve aux deux vues.
+
+Ligne 328
+    moteur attend, afin qu'une seule et meme explication serve aux deux vues.
+    code concerné : expliquees = [
+
+Ligne 359
+    On enregistre l'explication produite AU MOMENT de la capture. Sans cela,
+    code concerné : # l'historique changerait d'aspect a chaque evolution des regles, et l'on ne
+
+Ligne 360
+    l'historique changerait d'aspect a chaque evolution des regles, et l'on ne
+    code concerné : # pourrait plus comparer une analyse ancienne avec une nouvelle.
+
+Ligne 361
+    pourrait plus comparer une analyse ancienne avec une nouvelle.
+    code concerné : resume_par_communication = {
+
+Ligne 380
+    Les alertes sont enregistrees apres l'analyse, et leur echec ne remet pas
+    code concerné : # en cause l'enregistrement de la capture : on signale, sans perdre le reste.
+
+Ligne 381
+    en cause l'enregistrement de la capture : on signale, sans perdre le reste.
+    code concerné : try:
+
+Ligne 386
+    noqa: BLE001
+    code concerné : print(f"  (alertes non enregistrees : {type(e).__name__} — {str(e)[:90]})")
+
+Ligne 411
+    PostgREST separe les conditions par « & » : ecrit
+    code concerné : # avec « and », tout part dans la meme valeur et la
+
+Ligne 412
+    avec « and », tout part dans la meme valeur et la
+    code concerné : # base repond « invalid input syntax for type bigint ».
+
+Ligne 413
+    base repond « invalid input syntax for type bigint ».
+    code concerné : filtre=f"id=eq.{communication_id}&analyse_id=eq.{analyse_id}",
+
+Ligne 468
+    noqa: BLE001
+    code concerné : print(f"  (enrichissement indisponible : {type(e).__name__})")
+

@@ -1,10 +1,4 @@
-"""
-Interroger reellement le service d'enrichissement.
 
-Les tests unitaires verifient la logique avec une source fabriquee : ils ne
-prouvent pas que l'API repond, ni que le format attendu est le bon. Ce script
-fait l'appel pour de vrai, sur les adresses d'une capture enregistree.
-"""
 
 import sys
 from pathlib import Path
@@ -12,8 +6,8 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RACINE))
 
-from enrichissement import adresses  # noqa: E402
-from stockage import supabase  # noqa: E402
+from enrichissement import adresses
+from stockage import supabase
 
 disponible, raison = supabase.disponible()
 if not disponible:
@@ -22,7 +16,6 @@ if not disponible:
 
 lignes = supabase.lire("reseau_communications", ordre="id.desc", limite=200)
 
-# On rassemble les adresses distantes rencontrees, sans doublon.
 vues, ordre = set(), []
 for l in lignes:
     for ip in (l.get("ip_seconde"), l.get("ip_premiere")):

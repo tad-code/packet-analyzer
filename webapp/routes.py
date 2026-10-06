@@ -1,27 +1,4 @@
-"""
-Routes de l'application.
 
-Une route est une adresse que le navigateur peut demander. Chaque route fait
-trois choses, et rien de plus :
-
-    1. elle lit ce que l'utilisateur demande ;
-    2. elle appelle le module competent ;
-    3. elle rend une page.
-
-Toute la logique vit dans les autres modules. C'est ce qui rend ce fichier
-lisible : on y voit le plan de l'application, pas les details.
-
-Organisation des pages :
-
-    /                    tableau de bord : la vue generale
-    /capture             demarrer et arreter une capture
-    /communications      la liste des conversations observees
-    /communication/<cle> le detail d'une conversation, avec son explication
-    /protocoles          ce que le programme sait des protocoles
-    /glossaire           le vocabulaire employe, defini simplement
-    /historique          les captures enregistrees
-    /health              etat du service, en JSON
-"""
 
 from flask import Blueprint, jsonify, redirect, request, url_for
 
@@ -44,7 +21,6 @@ from webapp.rendu import rendre
 
 routes = Blueprint("routes", __name__)
 
-# Objet unique pour toute la duree de vie du programme.
 moteur = MoteurCapture(taille_tampon=config.taille_tampon)
 
 MESSAGES = {
@@ -53,14 +29,8 @@ MESSAGES = {
     "videe": "La liste a été vidée.",
 }
 
-
 def _paquets_analyses():
-    """
-    Traduit les paquets bruts conserves en paquets analyses.
 
-    Un paquet illisible est ignore plutot que de faire echouer l'affichage : une
-    seule donnee abimee ne doit pas rendre toute la page inutilisable.
-    """
     if not config.capture_locale:
         return []
 
@@ -72,17 +42,8 @@ def _paquets_analyses():
             continue
     return paquets
 
-
 def _contexte_capture(interface_proposee=None):
-    """
-    Rassemble tout ce dont la page de capture a besoin.
 
-    Cette fonction existe parce qu'une regression a eu lieu : en ajoutant les
-    pages de communications, la route de capture avait ete reecrite sans les
-    paquets, et la liste s'affichait vide. Une seule source pour ce contexte
-    evite que les deux appels (affichage normal et signalement d'erreur)
-    divergent a nouveau.
-    """
     interfaces = lister_interfaces() if config.capture_locale else []
 
     paquets = []
@@ -92,7 +53,7 @@ def _contexte_capture(interface_proposee=None):
                 paquets.append(analyser(brut, rang))
             except Exception:
                 continue
-        paquets.reverse()          # le plus recent en premier
+        paquets.reverse()
 
     return {
         "interfaces": interfaces,
@@ -108,9 +69,8 @@ def _contexte_capture(interface_proposee=None):
         "erreur_capture": moteur.erreur(),
     }
 
-
 def _derniere_capture():
-    """Rend l'analyse enregistree la plus recente, ou None."""
+
     if not supabase.disponible()[0]:
         return None
     try:
@@ -119,20 +79,8 @@ def _derniere_capture():
         return None
     return lignes[0] if lignes else None
 
-
 def _communications():
-    """
-    Les communications a afficher, selon le mode.
 
-    EN LOCAL, on regroupe les paquets conserves dans le tampon. Le regroupement
-    est refait a chaque affichage : la fonction est pure et rapide, et il n'y a
-    donc aucun etat intermediaire a maintenir.
-
-    EN LIGNE, le serveur n'a pas de carte reseau : son tampon est vide pour
-    toujours. On lit donc la derniere capture enregistree dans la base. C'est ce
-    qui donne son sens au mode en ligne — montrer ce qu'une autre machine a
-    observe, sans jamais capturer soi-meme.
-    """
     if config.capture_locale:
         return regrouper(_paquets_analyses())
 
@@ -145,18 +93,11 @@ def _communications():
     except ErreurBase:
         return []
 
-    # La meme adaptation que pour l'historique : une seule forme pour le moteur
-    # et pour les regles.
     return [depuis_ligne_enregistree(l) for l in lignes]
-
-
-# ---------------------------------------------------------------------------
-# Le tableau de bord
-# ---------------------------------------------------------------------------
 
 @routes.route("/")
 def accueil():
-    """Vue generale : les chiffres essentiels et les dernieres communications."""
+
     communications = _communications()
     return rendre("tableau_bord.html", "tableau",
                   stats=statistiques(communications),
@@ -166,29 +107,17 @@ def accueil():
                   total_vu=moteur.total_vu(),
                   interface_active=moteur.interface())
 
-
-# ---------------------------------------------------------------------------
-# Les communications
-# ---------------------------------------------------------------------------
-
 @routes.route("/communications")
 def communications():
-    """Liste des conversations observees."""
+
     toutes = _communications()
     return rendre("communications.html", "communications",
                   communications=toutes,
                   capture_en_cours=moteur.en_cours())
 
-
 @routes.route("/communication/<path:cle>")
 def communication_detail(cle):
-    """
-    Detail d'une communication : informations techniques et reponses.
 
-    L'identifiant contient des caracteres particuliers (barres verticales,
-    deux-points) : le gabarit l'encode et Flask le decode. On ne stocke rien,
-    on retrouve la communication en la recalculant.
-    """
     for communication in _communications():
         if communication["cle"] == cle:
             return rendre("communication.html", "communications",
@@ -207,22 +136,16 @@ def communication_detail(cle):
                   detail="Le tampon est limité aux derniers paquets : une communication "
                          "ancienne peut avoir été oubliée."), 404
 
-
-# ---------------------------------------------------------------------------
-# La capture
-# ---------------------------------------------------------------------------
-
 @routes.route("/capture")
 def capture():
-    """Page de capture : choisir une carte reseau, demarrer, arreter."""
+
     return rendre("capture.html", "capture",
                   message=MESSAGES.get(request.args.get("fait")),
                   **_contexte_capture())
 
-
 @routes.route("/capture/demarrer", methods=["POST"])
 def demarrer():
-    """Demarre la capture sur l'interface choisie."""
+
     if not config.capture_locale:
         return redirect(url_for("routes.capture"))
 
@@ -237,35 +160,21 @@ def demarrer():
 
     return redirect(url_for("routes.capture", fait="demarree"))
 
-
 @routes.route("/capture/arreter", methods=["POST"])
 def arreter():
-    """Arrete la capture en cours."""
+
     moteur.arreter()
     return redirect(url_for("routes.capture", fait="arretee"))
 
-
 @routes.route("/capture/vider", methods=["POST"])
 def vider():
-    """Vide la liste des paquets conserves."""
+
     moteur.vider()
     return redirect(url_for("routes.capture", fait="videe"))
 
-
-# ---------------------------------------------------------------------------
-# L'historique
-# ---------------------------------------------------------------------------
-
 @routes.route("/historique")
 def historique():
-    """
-    Liste des captures enregistrees dans la base.
 
-    Cette page ne doit jamais faire tomber l'application : si la base est
-    injoignable, ou si les tables n'existent pas encore, on affiche une
-    explication et une marche a suivre. C'est l'un des cas d'erreur exiges par
-    le cahier des charges.
-    """
     disponible, raison = supabase.disponible()
 
     if not disponible:
@@ -280,8 +189,7 @@ def historique():
     analyses, erreur, detail = [], None, None
     try:
         analyses = supabase.lire("reseau_analyses", ordre="debut.desc", limite=50)
-        # Pour chaque analyse, on compte ses communications : le chiffre est
-        # deja enregistre, on evite une requete supplementaire.
+
     except ErreurBase as e:
         erreur, detail = e.message, e.detail
 
@@ -293,10 +201,9 @@ def historique():
                   erreur_detail=detail,
                   capture_en_cours=moteur.en_cours())
 
-
 @routes.route("/historique/<int:analyse_id>")
 def historique_detail(analyse_id):
-    """Detail d'une capture enregistree : ses communications."""
+
     disponible, raison = supabase.disponible()
     if not disponible:
         return rendre("historique.html", "historique",
@@ -324,8 +231,6 @@ def historique_detail(analyse_id):
                       explication=f"Aucune capture enregistrée ne porte le numéro {analyse_id}.",
                       detail="Consultez la liste de l'historique."), 404
 
-    # Les communications viennent de la base : on les remet sous la forme que le
-    # moteur attend, afin qu'une seule et meme explication serve aux deux vues.
     expliquees = [
         {"ligne": c, "explication": expliquer(depuis_ligne_enregistree(c))}
         for c in communications
@@ -336,16 +241,9 @@ def historique_detail(analyse_id):
                   communications=expliquees,
                   capture_en_cours=moteur.en_cours())
 
-
 @routes.route("/capture/enregistrer", methods=["POST"])
 def enregistrer():
-    """
-    Enregistre la capture en cours dans la base.
 
-    En cas d'echec, les paquets restent en memoire et l'utilisateur peut
-    reessayer : c'est le point important — une erreur d'enregistrement ne doit
-    pas faire disparaitre le travail d'analyse.
-    """
     disponible, raison = supabase.disponible()
     communications = _communications()
     paquets = _paquets_analyses()
@@ -356,9 +254,6 @@ def enregistrer():
                       erreur_detail=raison,
                       **_contexte_capture())
 
-    # On enregistre l'explication produite AU MOMENT de la capture. Sans cela,
-    # l'historique changerait d'aspect a chaque evolution des regles, et l'on ne
-    # pourrait plus comparer une analyse ancienne avec une nouvelle.
     resume_par_communication = {
         c.get("cle"): expliquer(c)["resume"] for c in communications if c.get("cle")
     }
@@ -377,28 +272,18 @@ def enregistrer():
                       erreur_detail=e.detail,
                       **_contexte_capture())
 
-    # Les alertes sont enregistrees apres l'analyse, et leur echec ne remet pas
-    # en cause l'enregistrement de la capture : on signale, sans perdre le reste.
     try:
         contexte = statistiques(communications)
         supabase.enregistrer_alertes(identifiant,
                                      analyser_alertes(communications, contexte))
-    except Exception as e:                          # noqa: BLE001
+    except Exception as e:
         print(f"  (alertes non enregistrees : {type(e).__name__} — {str(e)[:90]})")
 
     return redirect(url_for("routes.historique_detail", analyse_id=identifiant))
 
-
 @routes.route("/historique/<int:analyse_id>/communication/<int:communication_id>")
 def historique_communication(analyse_id, communication_id):
-    """
-    Detail d'une communication enregistree, avec la meme explication qu'en direct.
 
-    Le resume affiche est celui CONSERVE au moment de la capture, et non celui que
-    les regles produiraient aujourd'hui : l'historique doit montrer ce qui a ete
-    constate ce jour-la. Le detail, lui, est recalcule depuis les champs conserves,
-    qui n'ont pas bouge.
-    """
     disponible, raison = supabase.disponible()
     if not disponible:
         return rendre("historique.html", "historique",
@@ -408,9 +293,7 @@ def historique_communication(analyse_id, communication_id):
 
     try:
         lignes = supabase.lire("reseau_communications",
-                               # PostgREST separe les conditions par « & » : ecrit
-                               # avec « and », tout part dans la meme valeur et la
-                               # base repond « invalid input syntax for type bigint ».
+
                                filtre=f"id=eq.{communication_id}&analyse_id=eq.{analyse_id}",
                                limite=1)
         analyses = supabase.lire("reseau_analyses", filtre=f"id=eq.{analyse_id}", limite=1)
@@ -438,17 +321,9 @@ def historique_communication(analyse_id, communication_id):
                   resume_enregistre=lignes[0].get("resume"),
                   capture_en_cours=moteur.en_cours())
 
-
 @routes.route("/alertes")
 def alertes():
-    """
-    Ce que les regles signalent sur la capture en cours.
 
-    L'enrichissement n'est demande que pour les adresses mises en cause par une
-    alerte, et pour vingt au plus. Interroger l'API pour toutes les adresses
-    affichees rendrait chaque chargement de page lent, et consommerait un quota
-    pour des adresses qui n'interessent personne.
-    """
     communications = _communications()
     contexte = statistiques(communications)
     trouvees = analyser_alertes(communications, contexte)
@@ -465,7 +340,7 @@ def alertes():
     if adresses:
         try:
             infos = enrichissement.enrichir(adresses)
-        except Exception as e:                      # noqa: BLE001
+        except Exception as e:
             print(f"  (enrichissement indisponible : {type(e).__name__})")
 
     return rendre("alertes.html", "alertes",
@@ -476,32 +351,23 @@ def alertes():
                   capture_en_cours=moteur.en_cours(),
                   nb_communications=len(communications))
 
-
 @routes.route("/protocoles")
 def protocoles():
-    """
-    Ce que le programme sait des protocoles et des ports.
 
-    Cette page existe pour une raison precise : rien dans l'application ne doit
-    reposer sur une connaissance cachee. Ce que le programme affirme sur un port,
-    l'utilisateur peut le lire ici — et le contester.
-    """
     return rendre("protocoles.html", "protocoles",
                   protocoles=list(PROTOCOLES.values()),
                   ports=list(PORTS.items()))
 
-
 @routes.route("/glossaire")
 def glossaire():
-    """Le vocabulaire employe, defini en francais simple."""
+
     return rendre("glossaire.html", "glossaire",
                   entrees=GLOSSAIRE,
                   capture_en_cours=moteur.en_cours())
 
-
 @routes.route("/health")
 def health():
-    """Etat du service, en JSON."""
+
     return jsonify({
         "etat": "ok",
         "version": "4.0",

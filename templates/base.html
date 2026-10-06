@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block titre %}Analyseur réseau{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-    {# Pendant une capture, la page se recharge toutes les 2 secondes pour
-       montrer les paquets au fur et a mesure. Le rechargement est suspendu
-       des que la capture s'arrete, pour ne pas deranger la lecture. #}
     {% if capture_en_cours %}<meta http-equiv="refresh" content="2">{% endif %}
 </head>
 <body>

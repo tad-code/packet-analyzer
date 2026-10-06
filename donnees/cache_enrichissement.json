@@ -2,6 +2,14 @@
  "93.184.216.34": {
   "erreur": "adresse non attribuée"
  },
+ "34.193.104.167": {
+  "pays": "United States",
+  "code_pays": "US",
+  "ville": "Ashburn",
+  "fournisseur": "Amazon.com, Inc.",
+  "organisation": "AWS EC2 (us-east-1)",
+  "reseau": "AS14618 Amazon.com, Inc."
+ },
  "2001:42d8:3693:c000:88c:8045:ba4f:d100": {
   "pays": "Ivory Coast",
   "code_pays": "CI",
@@ -10,37 +18,13 @@
   "organisation": "Orange Côte d'Ivoire",
   "reseau": "AS29571 Orange Côte d'Ivoire"
  },
- "2605:bc80:3010:b00:0:deb:166:200": {
-  "pays": "United States",
-  "code_pays": "US",
-  "ville": "Corvallis",
-  "fournisseur": "University of Oregon",
-  "organisation": "University of Oregon",
-  "reseau": "AS3701 University of Oregon"
- },
- "2603:400a:ffff:bb8::801f:3e": {
-  "pays": "United States",
-  "code_pays": "US",
-  "ville": "Cambridge",
-  "fournisseur": "Massachusetts Institute of Technology",
-  "organisation": "Massachusetts Institute of Technology",
-  "reseau": "AS3 Massachusetts Institute of Technology"
- },
- "64.233.167.94": {
-  "pays": "United States",
-  "code_pays": "US",
-  "ville": "Mountain View",
-  "fournisseur": "Google LLC",
-  "organisation": "Google LLC",
-  "reseau": "AS15169 Google LLC"
- },
- "18.233.182.23": {
-  "pays": "United States",
-  "code_pays": "US",
-  "ville": "Ashburn",
-  "fournisseur": "Amazon.com, Inc.",
-  "organisation": "AWS EC2 (us-east-1)",
-  "reseau": "AS14618 Amazon.com, Inc."
+ "2a04:4e42::223": {
+  "pays": "Canada",
+  "code_pays": "CA",
+  "ville": "Montreal",
+  "fournisseur": "Fastly, Inc.",
+  "organisation": "Fastly 4e42",
+  "reseau": "AS54113 Fastly, Inc."
  },
  "2a02:ec80:600:ed1a::1": {
   "pays": "United States",
@@ -50,20 +34,12 @@
   "organisation": "Wikimedia Foundation, Inc",
   "reseau": "AS14907 Wikimedia Foundation Inc."
  },
- "2a04:4e42:400::223": {
-  "pays": "Canada",
-  "code_pays": "CA",
-  "ville": "Montreal",
-  "fournisseur": "Fastly, Inc.",
-  "organisation": "Fastly 4e42",
-  "reseau": "AS54113 Fastly, Inc."
- },
- "2001:4860:4802:38::39": {
-  "pays": "Canada",
-  "code_pays": "CA",
-  "ville": "Montreal",
-  "fournisseur": "Google LLC",
-  "organisation": "Google LLC",
-  "reseau": "AS15169 Google LLC"
+ "2605:bc80:3010:b00:0:deb:166:200": {
+  "pays": "United States",
+  "code_pays": "US",
+  "ville": "Corvallis",
+  "fournisseur": "University of Oregon",
+  "organisation": "University of Oregon",
+  "reseau": "AS3701 University of Oregon"
  }
 }

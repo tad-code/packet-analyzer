@@ -1,0 +1,885 @@
+==============================================================================
+  EXPLICATIONS DU CODE — tests
+==============================================================================
+
+==============================================================================
+  tests\__init__.py
+==============================================================================
+
+
+
+==============================================================================
+  tests\conftest.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  conftest.py
+------------------------------------------------------------------------------
+
+Outils communs aux tests.
+
+Les tests ne capturent aucun paquet et ne touchent a aucun reseau : ils
+fabriquent des paquets a la main, sous forme de dictionnaires. C'est possible
+parce que le regroupement est une fonction pure — elle ne connait que des
+donnees. Consequence : les tests s'executent partout, en une fraction de
+seconde, et donnent toujours le meme resultat.
+
+
+------------------------------------------------------------------------------
+  fonction  paquet(source, destination, port_source, port_destination, protocole, taille, horodatage, drapeaux)
+------------------------------------------------------------------------------
+
+Fabrique un paquet deja analyse, tel que le produirait analyse.paquet.
+
+    Les valeurs par defaut decrivent un paquet TCP ordinaire ; chaque test ne
+    precise que ce qui l'interesse.
+
+
+------------------------------------------------------------------------------
+  fonction  fabrique()
+------------------------------------------------------------------------------
+
+Rend la fabrique de paquets aux tests qui la demandent.
+
+
+
+==============================================================================
+  tests\test_detection.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  test_detection.py
+------------------------------------------------------------------------------
+
+Tests des regles de detection.
+
+Ce qui compte ici n'est pas seulement qu'une regle se declenche : c'est qu'elle
+NE se declenche PAS a tort. Un outil qui alerte sur du trafic ordinaire sera
+ignore, et n'aura servi a rien.
+
+
+------------------------------------------------------------------------------
+  fonction  communication(**champs)
+------------------------------------------------------------------------------
+
+Une communication minimale, completee par ce que le test veut verifier.
+
+
+------------------------------------------------------------------------------
+  fonction  test_une_communication_ordinaire_ne_declenche_rien()
+------------------------------------------------------------------------------
+
+Le controle le plus important : le silence quand tout va bien.
+
+
+------------------------------------------------------------------------------
+  fonction  test_chaque_alerte_cite_sa_base()
+------------------------------------------------------------------------------
+
+Une alerte sans fondement observable n'est pas verifiable — et une alerte
+    invérifiable n'a aucune valeur.
+
+
+------------------------------------------------------------------------------
+  fonction  test_une_regle_defaillante_n_empeche_pas_les_autres(monkeypatch)
+------------------------------------------------------------------------------
+
+Sur des donnees inattendues, une regle peut lever. Les autres doivent
+    continuer : une alerte manquante est facheuse, un plantage qui masque tout
+    l'est davantage.
+
+
+------------------------------------------------------------------------------
+  fonction  test_service_en_clair_ignore_les_echanges_tres_courts()
+------------------------------------------------------------------------------
+
+Un paquet isole sur le port 80 n'est pas un echange qu'on peut juger.
+
+
+------------------------------------------------------------------------------
+  fonction  test_connexions_repetees_ignore_les_echanges_longs()
+------------------------------------------------------------------------------
+
+Dix telechargements vers le meme serveur ne sont pas un canal de commande.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 32
+    ---------------------------------------------------------------------------
+    code concerné : # Aucune alerte ne doit dependre de donnees absentes
+
+Ligne 33
+    Aucune alerte ne doit dependre de donnees absentes
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 34
+    ---------------------------------------------------------------------------
+
+Ligne 75
+    ---------------------------------------------------------------------------
+    code concerné : # Chaque regle : se declenche quand il faut, se taire sinon
+
+Ligne 76
+    Chaque regle : se declenche quand il faut, se taire sinon
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 77
+    ---------------------------------------------------------------------------
+
+Ligne 140
+    8 000 000 sur 8 002 000 : le titre ne doit PAS annoncer « 100 % », qui
+    code concerné : # laisserait croire que tout le volume est passe par cette communication.
+
+Ligne 141
+    laisserait croire que tout le volume est passe par cette communication.
+    code concerné : assert "100 %" not in alertes[0]["titre"]
+
+Ligne 162
+    ---------------------------------------------------------------------------
+    code concerné : # Ordonnancement
+
+Ligne 163
+    Ordonnancement
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 164
+    ---------------------------------------------------------------------------
+
+
+
+==============================================================================
+  tests\test_enrichissement.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  test_enrichissement.py
+------------------------------------------------------------------------------
+
+Tests de l'enrichissement.
+
+Aucun de ces tests ne contacte le reseau : la source est fournie par le test.
+Une suite qui depend d'un service externe echoue le jour ou le reseau est coupe,
+pour une raison qui n'a rien a voir avec le code.
+
+
+------------------------------------------------------------------------------
+  fonction  test_les_adresses_privees_ne_sont_pas_interrogees()
+------------------------------------------------------------------------------
+
+Interroger un service externe sur une adresse 192.168.x.x revelerait la
+    structure du reseau local sans rien apprendre : une adresse privee
+    n'appartient a aucun pays.
+
+
+------------------------------------------------------------------------------
+  fonction  test_les_adresses_de_multidiffusion_ne_sont_pas_interrogees()
+------------------------------------------------------------------------------
+
+Defaut constate sur une vraie capture : 239.255.255.250, utilisee par la
+    decouverte de services sur le reseau local, partait a l'API. Le service
+    repondait « reserved range » — aucun pays, mais un quota consomme.
+
+
+------------------------------------------------------------------------------
+  fonction  test_une_adresse_deja_connue_ne_reinterroge_pas_l_api()
+------------------------------------------------------------------------------
+
+Le cache existe pour ne pas reposer la meme question a chaque analyse.
+
+
+------------------------------------------------------------------------------
+  fonction  test_une_panne_reseau_ne_fait_pas_echouer_l_enrichissement()
+------------------------------------------------------------------------------
+
+L'enrichissement est un confort. Une panne doit donner moins d'information,
+    jamais une erreur : l'analyse doit rester consultable.
+
+
+------------------------------------------------------------------------------
+  fonction  test_une_adresse_sans_reponse_est_dite_non_identifiee()
+------------------------------------------------------------------------------
+
+L'API a repondu, mais sans resultat : on le retient, sans inventer.
+
+
+------------------------------------------------------------------------------
+  fonction  test_un_cache_illisible_ne_fait_pas_planter(monkeypatch, tmp_path)
+------------------------------------------------------------------------------
+
+Un cache corrompu ne doit pas empecher l'application de fonctionner.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 14
+    ---------------------------------------------------------------------------
+    code concerné : # Quelles adresses meritent d'etre interrogees ?
+
+Ligne 15
+    Quelles adresses meritent d'etre interrogees ?
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 16
+    ---------------------------------------------------------------------------
+
+Ligne 51
+    ---------------------------------------------------------------------------
+    code concerné : # L'interrogation
+
+Ligne 52
+    L'interrogation
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 53
+    ---------------------------------------------------------------------------
+
+Ligne 97
+    ---------------------------------------------------------------------------
+    code concerné : # La panne ne doit rien casser
+
+Ligne 98
+    La panne ne doit rien casser
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 99
+    ---------------------------------------------------------------------------
+
+Ligne 122
+    ---------------------------------------------------------------------------
+    code concerné : # Mise en phrase
+
+Ligne 123
+    Mise en phrase
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 124
+    ---------------------------------------------------------------------------
+
+
+
+==============================================================================
+  tests\test_explication.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  test_explication.py
+------------------------------------------------------------------------------
+
+Tests du moteur d'explication.
+
+C'est le module le plus surveille du projet, parce que c'est celui qui pourrait
+inventer des conclusions. Les tests verifient donc trois garanties :
+
+    1. AUCUN FAIT INVENTE — un champ absent donne « non disponible », jamais une
+       valeur plausible ;
+    2. TOUTE INTERPRETATION EST FONDEE — chaque constat cite le fait observe sur
+       lequel il repose ;
+    3. AUCUNE HYPOTHESE PRESENTEE COMME UN FAIT — le niveau est explicite, et le
+       vocabulaire employe reste prudent.
+
+Ces trois garanties sont la reponse a la question de defense : « comment
+empechez-vous votre systeme d'inventer une conclusion ? »
+
+
+------------------------------------------------------------------------------
+  fonction  communication_de(paquets, **options)
+------------------------------------------------------------------------------
+
+Construit une communication a partir de paquets fabriques.
+
+
+------------------------------------------------------------------------------
+  fonction  test_les_champs_absents_sont_signales_comme_indisponibles()
+------------------------------------------------------------------------------
+
+Un champ absent ne doit jamais etre complete par une valeur plausible.
+
+    C'est la garantie la plus importante du projet : elle est structurelle, car
+    l'extraction des faits ne lit que les champs presents.
+
+
+------------------------------------------------------------------------------
+  fonction  test_chaque_constat_cite_le_fait_observe_qui_le_fonde()
+------------------------------------------------------------------------------
+
+Aucune interpretation ne doit apparaitre sans sa base.
+
+    Sans cette mention, l'utilisateur ne peut pas verifier le raisonnement : la
+    phrase devient une affirmation tombee du ciel. Le champ « base » est ce qui
+    rend l'explication verifiable.
+
+
+------------------------------------------------------------------------------
+  fonction  test_une_regle_qui_ne_s_applique_pas_ne_produit_rien()
+------------------------------------------------------------------------------
+
+On ne remplit pas la page de phrases vides.
+
+
+------------------------------------------------------------------------------
+  fonction  test_le_port_connu_produit_une_interpretation_prudente()
+------------------------------------------------------------------------------
+
+On dit « generalement associe », jamais « c'est du HTTPS ».
+
+
+------------------------------------------------------------------------------
+  fonction  test_un_refus_produit_une_interpretation_qui_n_accuse_personne()
+------------------------------------------------------------------------------
+
+Un RST n'est pas une attaque : le texte doit le dire.
+
+
+------------------------------------------------------------------------------
+  fonction  test_le_resume_ne_contient_aucune_affirmation_absolue()
+------------------------------------------------------------------------------
+
+Aucun « est » categorique sur un service deduit du port.
+
+
+------------------------------------------------------------------------------
+  fonction  test_l_explication_ne_plante_pas_sur_une_communication_vide()
+------------------------------------------------------------------------------
+
+Un cas degenere ne doit pas faire tomber la page.
+
+
+------------------------------------------------------------------------------
+  fonction  test_une_adresse_ipv6_est_encadree_de_crochets()
+------------------------------------------------------------------------------
+
+Sans crochets, « adresse:port » devient illisible pour une IPv6 : l'adresse
+    contient deja des deux-points, et rien ne separe plus l'adresse du port.
+    Le defaut a ete constate sur une vraie capture.
+
+
+------------------------------------------------------------------------------
+  fonction  test_les_deux_formes_d_une_communication_donnent_leurs_adresses()
+------------------------------------------------------------------------------
+
+Piege rencontre en branchant l'enrichissement : la forme vivante et la forme
+    enregistree ne nomment pas leurs extremites pareil. Lire le mauvais nom ne
+    provoque aucune erreur — juste une liste vide, et une colonne muette.
+
+
+------------------------------------------------------------------------------
+  fonction  test_une_adresse_inconnue_ne_donne_pas_de_texte_trompeur()
+------------------------------------------------------------------------------
+
+On rend None : c'est _valeur() qui decidera comment dire l'absence.
+
+
+------------------------------------------------------------------------------
+  fonction  test_une_connexion_sans_fermeture_n_est_pas_dite_active()
+------------------------------------------------------------------------------
+
+Defaut constate sur une capture arretee : le resume affirmait « elle est
+    toujours active ». C'etait un excès — aucun drapeau de fermeture avait ete
+    vu, ce qui ne prouve pas que la connexion soit encore ouverte.
+
+
+------------------------------------------------------------------------------
+  fonction  test_les_drapeaux_compacts_sont_traduits()
+------------------------------------------------------------------------------
+
+La base conserve les drapeaux sous forme compacte, telle que Scapy les rend.
+    « AFPR » est illisible pour un lecteur : la page doit afficher des noms.
+    Defaut constate sur une vraie communication.
+
+
+------------------------------------------------------------------------------
+  fonction  test_une_lettre_inconnue_est_montree_telle_quelle()
+------------------------------------------------------------------------------
+
+Le programme ne doit pas inventer une signification qu'il ignore.
+
+
+------------------------------------------------------------------------------
+  fonction  test_fin_et_rst_ensemble_ne_donnent_pas_deux_affirmations_contraires()
+------------------------------------------------------------------------------
+
+Defaut constate : la page affirmait a la fois « la connexion s'est fermee
+    proprement » et « elle a ete interrompue brutalement ». Les deux drapeaux
+    etaient reellement presents — mais deux phrases contraires, cote a cote,
+    ne veulent rien dire pour le lecteur.
+
+
+------------------------------------------------------------------------------
+  fonction  test_un_champ_absent_de_la_base_reste_absent()
+------------------------------------------------------------------------------
+
+Le sens de l'echange n'est pas conserve en base. L'adaptateur ne doit pas
+    l'inventer : le moteur le signalera « non disponible », et c'est l'information
+    juste.
+
+
+------------------------------------------------------------------------------
+  fonction  test_la_meme_explication_sert_aux_deux_vues()
+------------------------------------------------------------------------------
+
+C'est la raison d'etre de l'adaptateur : une seule explication, deux sources.
+    Si les deux chemins divergeaient, l'historique et la vue en direct ne diraient
+    plus la meme chose.
+
+
+------------------------------------------------------------------------------
+  fonction  test_la_somme_des_constats_est_complete()
+------------------------------------------------------------------------------
+
+Defaut constate a l'ecran : la ligne de comptes annoncait « 2 interpretations,
+    2 hypotheses » alors que la table en dessous en affichait cinq. Un constat de
+    niveau « observation » n'etait compte nulle part.
+
+    Une somme qui ne correspond pas a ce qui est affiche fait douter de tout le
+    reste — c'est precisement ce qu'un outil d'analyse ne peut pas se permettre.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 37
+    ---------------------------------------------------------------------------
+    code concerné : # 1. Aucun fait invente
+
+Ligne 38
+    1. Aucun fait invente
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 39
+    ---------------------------------------------------------------------------
+
+Ligne 94
+    ---------------------------------------------------------------------------
+    code concerné : # 2. Toute interpretation est fondee
+
+Ligne 95
+    2. Toute interpretation est fondee
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 96
+    ---------------------------------------------------------------------------
+
+Ligne 123
+    ---------------------------------------------------------------------------
+    code concerné : # 3. Aucune hypothese presentee comme un fait
+
+Ligne 124
+    3. Aucune hypothese presentee comme un fait
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 125
+    ---------------------------------------------------------------------------
+
+Ligne 162
+    Le mot « chiffre » apparait dans deux constats : celui du service connu
+    code concerné : # (« Web chiffré ») et celui du contenu. On vise le second sans ambiguïte.
+
+Ligne 163
+    (« Web chiffré ») et celui du contenu. On vise le second sans ambiguïte.
+    code concerné : chiffre = [c for c in constats if "probablement chiffré" in c["texte"]]
+
+Ligne 169
+    ---------------------------------------------------------------------------
+    code concerné : # La phrase principale
+
+Ligne 170
+    La phrase principale
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 171
+    ---------------------------------------------------------------------------
+
+Ligne 195
+    ---------------------------------------------------------------------------
+    code concerné : # Reconnaissance des adresses privees
+
+Ligne 196
+    Reconnaissance des adresses privees
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 197
+    ---------------------------------------------------------------------------
+
+Ligne 212
+    ---------------------------------------------------------------------------
+    code concerné : # Assemblage complet
+
+Ligne 213
+    Assemblage complet
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 214
+    ---------------------------------------------------------------------------
+
+Ligne 242
+    ---------------------------------------------------------------------------
+    code concerné : # Formatage des adresses
+
+Ligne 243
+    Formatage des adresses
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 244
+    ---------------------------------------------------------------------------
+
+Ligne 306
+    ---------------------------------------------------------------------------
+    code concerné : # L'etat ne doit jamais etre affirme au-dela de ce qui a ete observe
+
+Ligne 307
+    L'etat ne doit jamais etre affirme au-dela de ce qui a ete observe
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 308
+    ---------------------------------------------------------------------------
+
+Ligne 344
+    ---------------------------------------------------------------------------
+    code concerné : # Lecture des drapeaux
+
+Ligne 345
+    Lecture des drapeaux
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 346
+    ---------------------------------------------------------------------------
+
+Ligne 383
+    ---------------------------------------------------------------------------
+    code concerné : # Deux drapeaux contradictoires ne doivent pas coexister
+
+Ligne 384
+    Deux drapeaux contradictoires ne doivent pas coexister
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 385
+    ---------------------------------------------------------------------------
+
+Ligne 423
+    ---------------------------------------------------------------------------
+    code concerné : # L'adaptateur, entre la base et le moteur
+
+Ligne 424
+    L'adaptateur, entre la base et le moteur
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 425
+    ---------------------------------------------------------------------------
+
+
+
+==============================================================================
+  tests\test_regroupement.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  test_regroupement.py
+------------------------------------------------------------------------------
+
+Tests du regroupement des paquets en communications.
+
+Ce que l'on verifie, et pourquoi :
+
+    - les deux sens d'un meme echange forment UNE seule communication, et non
+      deux. C'est le piege principal du regroupement ;
+    - deux destinations differentes forment bien DEUX communications ;
+    - les comptages (paquets, octets) sont exacts ;
+    - l'etat deduit des drapeaux correspond a la realite ;
+    - l'inactivite termine une communication ;
+    - le port du service est identifie par la bonne regle ;
+    - les sept questions du cahier des charges ont une reponse.
+
+
+------------------------------------------------------------------------------
+  fonction  test_les_deux_sens_forment_une_seule_communication()
+------------------------------------------------------------------------------
+
+Un paquet et sa reponse doivent tomber dans la meme communication.
+
+    C'est le point le plus important du module : sans le tri des extremites, la
+    reponse du serveur formerait une seconde communication, et l'on compterait
+    deux conversations la ou il n'y en a qu'une.
+
+
+------------------------------------------------------------------------------
+  fonction  test_port_connu_reconnu_meme_sil_est_le_plus_grand()
+------------------------------------------------------------------------------
+
+443 est connu : c'est le service, meme si l'autre port est plus petit.
+
+
+------------------------------------------------------------------------------
+  fonction  test_a_defaut_on_prend_le_plus_petit_port()
+------------------------------------------------------------------------------
+
+Deux ports inconnus : le plus petit est celui du service.
+
+
+------------------------------------------------------------------------------
+  fonction  test_rst_donne_une_communication_refusee()
+------------------------------------------------------------------------------
+
+Un RST signale un refus ou une fermeture brutale : cas a distinguer.
+
+
+------------------------------------------------------------------------------
+  fonction  test_silence_prolonge_donne_une_communication_inactive()
+------------------------------------------------------------------------------
+
+Sans FIN, une communication silencieuse depuis longtemps est terminee.
+
+
+------------------------------------------------------------------------------
+  fonction  test_paquet_incomplet_est_ignore_sans_casser_le_regroupement()
+------------------------------------------------------------------------------
+
+Un paquet sans adresses ne doit pas faire echouer tout le reste.
+
+
+------------------------------------------------------------------------------
+  fonction  test_une_communication_fermee_n_est_pas_active()
+------------------------------------------------------------------------------
+
+Une communication terminee par FIN ne doit pas compter comme active.
+
+    Defaut reel : l'activite etait deduite du seul delai d'inactivite. Une
+    communication tout juste fermee etait donc annoncee « encore active »,
+    alors que ses propres drapeaux disaient le contraire. Le tableau de bord
+    affichait ainsi 61 communications actives sur 61, dont 11 refusees.
+
+
+------------------------------------------------------------------------------
+  fonction  test_les_destinations_excluent_la_machine_qui_a_pris_l_initiative()
+------------------------------------------------------------------------------
+
+Une machine ne doit pas figurer a la fois dans les sources et les
+    destinations.
+
+    Defaut reel : les deux extremites de chaque communication etaient comptees
+    comme destinations. Le tableau de bord presentait donc une adresse locale
+    comme une destination, ce qui n'a pas de sens.
+
+
+------------------------------------------------------------------------------
+  fonction  test_un_service_connu_est_nomme_sur_le_tableau_de_bord()
+------------------------------------------------------------------------------
+
+Le port 8080 doit etre reconnu, comme le 443 ou le 80.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 26
+    ---------------------------------------------------------------------------
+    code concerné : # La cle de communication
+
+Ligne 27
+    La cle de communication
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 28
+    ---------------------------------------------------------------------------
+
+Ligne 51
+    ---------------------------------------------------------------------------
+    code concerné : # Le port du service
+
+Ligne 52
+    Le port du service
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 53
+    ---------------------------------------------------------------------------
+
+Ligne 70
+    ---------------------------------------------------------------------------
+    code concerné : # Le regroupement lui-meme
+
+Ligne 71
+    Le regroupement lui-meme
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 72
+    ---------------------------------------------------------------------------
+
+Ligne 95
+    L'ordre d'arrivee ne doit pas fausser le debut ni la fin.
+    code concerné : assert communications[0]["debut"] == 1000.0
+
+Ligne 124
+    ---------------------------------------------------------------------------
+    code concerné : # L'etat de la communication
+
+Ligne 125
+    L'etat de la communication
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 126
+    ---------------------------------------------------------------------------
+
+Ligne 163
+    ---------------------------------------------------------------------------
+    code concerné : # Robustesse
+
+Ligne 164
+    Robustesse
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 165
+    ---------------------------------------------------------------------------
+
+Ligne 177
+    Le paquet incomplet forme sa propre communication, sans planter.
+    code concerné : assert len(communications) == 2
+
+Ligne 181
+    ---------------------------------------------------------------------------
+    code concerné : # Les sept questions du cahier des charges
+
+Ligne 182
+    Les sept questions du cahier des charges
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 183
+    ---------------------------------------------------------------------------
+
+Ligne 212
+    ---------------------------------------------------------------------------
+    code concerné : # Statistiques du tableau de bord
+
+Ligne 213
+    Statistiques du tableau de bord
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 214
+    ---------------------------------------------------------------------------
+
+Ligne 240
+    ---------------------------------------------------------------------------
+    code concerné : # Corrections apportees apres examen du tableau de bord reel
+
+Ligne 241
+    Corrections apportees apres examen du tableau de bord reel
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 242
+    ---------------------------------------------------------------------------
+
+
+
+==============================================================================
+  tests\test_stockage.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  test_stockage.py
+------------------------------------------------------------------------------
+
+Tests de l'acces a la base.
+
+Ces tests n'ouvrent aucune connexion : ils verifient la logique de decision —
+quand la base est-elle utilisable, et comment une erreur est-elle traduite en
+message comprehensible.
+
+C'est exactement ce que le cahier des charges demande au titre de la gestion des
+erreurs : « l'utilisateur ne doit pas etre confronte a des erreurs
+incomprehensibles ». Encore faut-il que la traduction soit testee.
+
+
+------------------------------------------------------------------------------
+  classe  ReponseFactice
+------------------------------------------------------------------------------
+
+Imite une reponse HTTP, sans ouvrir de connexion.
+
+
+------------------------------------------------------------------------------
+  fonction  test_cle_publique_seule_est_insuffisante(monkeypatch)
+------------------------------------------------------------------------------
+
+La base etant fermee, la cle publique ne peut rien faire.
+
+    Ce message doit etre explicite : sans lui, l'utilisateur verrait une
+    historique vide et croirait l'application cassee, alors qu'il manque
+    simplement la cle secrete.
+
+
+------------------------------------------------------------------------------
+  fonction  test_l_insertion_demande_la_ligne_ecrite(monkeypatch)
+------------------------------------------------------------------------------
+
+Sans cette preference, la base ne renvoie rien et l'on perd l'identifiant.
+
+
+------------------------------------------------------------------------------
+  fonction  test_acces_refuse_parle_de_la_cle_secrete()
+------------------------------------------------------------------------------
+
+Cas le plus probable en pratique : la RLS est fermee, la cle manque.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 32
+    ---------------------------------------------------------------------------
+    code concerné : # La base est-elle utilisable ?
+
+Ligne 33
+    La base est-elle utilisable ?
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 34
+    ---------------------------------------------------------------------------
+
+Ligne 83
+    ---------------------------------------------------------------------------
+    code concerné : # Construction des adresses
+
+Ligne 84
+    Construction des adresses
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 85
+    ---------------------------------------------------------------------------
+
+Ligne 113
+    ---------------------------------------------------------------------------
+    code concerné : # Traduction des erreurs
+
+Ligne 114
+    Traduction des erreurs
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 115
+    ---------------------------------------------------------------------------
+
+Ligne 148
+    jamais un message vide
+
+Ligne 157
+    ---------------------------------------------------------------------------
+    code concerné : # Enregistrement sans base
+
+Ligne 158
+    Enregistrement sans base
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 159
+    ---------------------------------------------------------------------------
+

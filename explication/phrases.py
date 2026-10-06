@@ -1,36 +1,12 @@
-"""
-Production de l'explication en langage humain.
 
-C'est la fonctionnalite centrale du projet : transformer des chiffres en phrases
-comprehensibles, sans jamais confondre ce qui est observe avec ce qui est deduit.
-
-Trois niveaux, et ils sont affiches differemment dans l'interface :
-
-    OBSERVATION     un fait, lu directement dans le paquet. Rien n'est suppose.
-    INTERPRETATION  une lecture de ce fait, fondee sur une connaissance generale.
-                    On dit « generalement », jamais « c'est ».
-    HYPOTHESE       une possibilite, quand les donnees ne permettent pas de
-                    conclure. On dit « peut-etre », « il est possible que ».
-
-REGLE ABSOLUE : chaque interpretation porte la mention du fait observe sur lequel
-elle repose (le champ « base »). Une interpretation sans base observable n'est pas
-produite. C'est ce qui rend l'explication verifiable : l'utilisateur peut toujours
-remonter du raisonnement a la donnee.
-
-Ce module ne lit jamais un paquet. Il ne connait que le dictionnaire de
-communication, deja construit. Il ne peut donc pas inventer une observation :
-tout ce qu'il peut dire vient de ce qu'on lui a donne.
-"""
 
 from analyse.protocoles import fiche_port, nom_du_port
 from analyse.protocoles import lire_drapeaux
 
-# Les trois niveaux de certitude.
 OBSERVATION = "observation"
 INTERPRETATION = "interpretation"
 HYPOTHESE = "hypothese"
 
-# Libelles affiches dans l'interface, avec la couleur associee.
 NIVEAUX = {
     OBSERVATION: {
         "libelle": "Fait observé",
@@ -48,20 +24,10 @@ NIVEAUX = {
     },
 }
 
-# Ports dont le contenu est chiffre par convention.
 PORTS_CHIFFRES = {443, 8443, 993, 995, 465, 636}
 
-
-# ---------------------------------------------------------------------------
-# Les regles d'interpretation
-#
-# Une fonction par regle. Chacune rend un dictionnaire ou None si la regle ne
-# s'applique pas. Cette forme rend chaque regle lisible, testable seule, et
-# facile a expliquer a l'oral : « cette fonction dit ceci, et voici sa condition ».
-# ---------------------------------------------------------------------------
-
 def _regle_service_connu(communication):
-    """Le port du service correspond a un service dont le role est etabli."""
+
     port = communication.get("port_service")
     nom = nom_du_port(port) if port is not None else None
     if port is None or not nom:
@@ -75,9 +41,8 @@ def _regle_service_connu(communication):
                  + (f" {commentaire}" if commentaire else ""),
     }
 
-
 def _regle_service_inconnu(communication):
-    """Le port ne figure pas parmi les services connus."""
+
     port = communication.get("port_service")
     if port is None:
         return None
@@ -92,9 +57,8 @@ def _regle_service_inconnu(communication):
                  "non standard.",
     }
 
-
 def _regle_contenu_chiffre(communication):
-    """Le port est celui d'un service chiffre par convention."""
+
     port = communication.get("port_service")
     if port not in PORTS_CHIFFRES:
         return None
@@ -106,15 +70,8 @@ def _regle_contenu_chiffre(communication):
                  "quand, combien — et non sur ce qui est dit.",
     }
 
-
 def _regle_fermeture_et_refus(communication):
-    """
-    Les deux drapeaux FIN et RST ont ete observes sur la meme communication.
 
-    Cas rencontre sur une vraie capture, et il faut le dire : afficher cote a cote
-    « la connexion s'est fermee proprement » et « elle a ete interrompue
-    brutalement » serait contradictoire, et laisserait l'utilisateur sans reponse.
-    """
     noms = lire_drapeaux(communication.get("drapeaux_vus"))
     if "FIN" not in noms or "RST" not in noms:
         return None
@@ -127,15 +84,13 @@ def _regle_fermeture_et_refus(communication):
                  "l'accord de son correspondant.",
     }
 
-
 def _regle_fermeture_propre(communication):
-    """Un drapeau FIN a ete observe, sans RST."""
+
     noms = lire_drapeaux(communication.get("drapeaux_vus"))
     if "FIN" not in noms:
         return None
     if "RST" in noms:
-        # La combinaison des deux est traitee par sa propre regle : deux
-        # affirmations contraires ne doivent pas coexister.
+
         return None
     return {
         "niveau": INTERPRETATION,
@@ -144,9 +99,8 @@ def _regle_fermeture_propre(communication):
                  "l'échange en se mettant d'accord. C'est le déroulement normal.",
     }
 
-
 def _regle_connexion_refusee(communication):
-    """Un drapeau RST a ete observe, sans FIN."""
+
     noms = lire_drapeaux(communication.get("drapeaux_vus"))
     if "RST" not in noms:
         return None
@@ -160,9 +114,8 @@ def _regle_connexion_refusee(communication):
                  "communication est coupée. Cela peut être parfaitement normal.",
     }
 
-
 def _regle_ouverture_sans_reponse(communication):
-    """Un SYN a ete vu, mais rien ne vient en retour."""
+
     drapeaux = communication.get("drapeaux_vus") or ""
     if "S" not in drapeaux:
         return None
@@ -177,9 +130,8 @@ def _regle_ouverture_sans_reponse(communication):
                  "Une seule observation ne permet pas de trancher.",
     }
 
-
 def _regle_echange_unidirectionnel(communication):
-    """Des paquets dans un seul sens, sans SYN."""
+
     drapeaux = communication.get("drapeaux_vus") or ""
     if "S" in drapeaux:
         return None
@@ -194,9 +146,8 @@ def _regle_echange_unidirectionnel(communication):
                  "UDP, c'est habituel : le service n'est pas tenu de répondre.",
     }
 
-
 def _regle_debit(communication):
-    """Calcule un debit moyen, quand la duree permet de le faire."""
+
     duree = communication.get("duree")
     octets = communication.get("octets")
     if not duree or duree < 0.5 or not octets:
@@ -212,9 +163,8 @@ def _regle_debit(communication):
         "texte": f"Débit moyen calculé sur la durée observée : environ {texte_debit}.",
     }
 
-
 def _regle_communication_longue(communication):
-    """Une communication qui dure longtemps avec peu de paquets."""
+
     duree = communication.get("duree")
     paquets = communication.get("nb_paquets")
     if not duree or duree < 30 or not paquets:
@@ -230,9 +180,8 @@ def _regle_communication_longue(communication):
                  "service qui ne répond plus.",
     }
 
-
 def _regle_volume_important(communication):
-    """Un volume eleve en peu de temps."""
+
     octets = communication.get("octets")
     duree = communication.get("duree")
     if not octets or octets < 100 * 1024:
@@ -246,14 +195,8 @@ def _regle_volume_important(communication):
                  "d'un transfert de données, et non d'un simple échange de contrôle.",
     }
 
-
-# Ordre d'evaluation des regles. L'ordre compte : les regles generales viennent
-# apres les regles precises, pour que l'explication la plus utile soit lue en
-# premier.
 REGLES = [
-    # La combinaison FIN + RST vient EN PREMIER : les deux regles suivantes
-    # s'effacent devant elle, sinon elles produiraient deux affirmations
-    # contradictoires.
+
     _regle_fermeture_et_refus,
     _regle_fermeture_propre,
     _regle_connexion_refusee,
@@ -267,38 +210,22 @@ REGLES = [
     _regle_debit,
 ]
 
-
-# ---------------------------------------------------------------------------
-# Assemblage
-# ---------------------------------------------------------------------------
-
 def interpreter(communication):
-    """
-    Applique les regles et rend la liste des constats produits.
 
-    Chaque constat porte son niveau et le fait observe qui le fonde. Une regle qui
-    ne s'applique pas ne produit rien : on ne remplit pas la page de phrases vides.
-    """
     constats = []
     for regle in REGLES:
         try:
             constat = regle(communication)
         except Exception:
-            # Une regle defaillante ne doit pas priver l'utilisateur des autres.
+
             continue
         if constat:
             constat["regle"] = regle.__name__.lstrip("_").replace("regle_", "")
             constats.append(constat)
     return constats
 
-
 def resumer(communication):
-    """
-    Produit la phrase d'explication principale, en francais courant.
 
-    Elle est construite a partir des seuls elements presents. Si une information
-    manque, la phrase s'adapte : elle ne complete jamais un trou par une supposition.
-    """
     premiere = communication.get("premiere_extremite") or {}
     seconde = communication.get("seconde_extremite") or {}
     port = communication.get("port_service")
@@ -312,7 +239,6 @@ def resumer(communication):
     locale_a = _est_locale(premiere.get("ip"))
     locale_b = _est_locale(seconde.get("ip"))
 
-    # Qui parle a qui, selon que les deux extremites sont locales ou non.
     if locale_a and not locale_b:
         ouverture = (f"Une machine du réseau local ({premiere['ip']}) communique avec "
                      f"un serveur distant ({seconde['ip']})")
@@ -326,7 +252,6 @@ def resumer(communication):
         ouverture = (f"Deux machines distantes échangent : {premiere['ip']} et "
                      f"{seconde['ip']}")
 
-    # Le protocole et le port.
     suite = ""
     if protocole:
         suite = f" en utilisant le protocole {protocole}"
@@ -336,12 +261,8 @@ def resumer(communication):
         else:
             suite += f", sur le port {port}"
 
-    # L'etat.
     etat = communication.get("etat")
-    # L'etat est deduit des drapeaux REELLEMENT observes. Quand aucun drapeau de
-    # fermeture n'a ete vu, on ne peut pas affirmer que la connexion est encore
-    # ouverte : la capture s'est peut-etre arretee avant. On enonce donc
-    # l'observation, sans conclure a la place de l'utilisateur.
+
     fin = {
         "terminee": " La connexion s'est terminée normalement.",
         "refusee": " La connexion a été refusée ou interrompue.",
@@ -350,7 +271,6 @@ def resumer(communication):
         "ouverte": " Aucun drapeau de fermeture n'a été observé.",
     }.get(etat, "")
 
-    # Le volume, quand il est connu.
     volume = ""
     octets = communication.get("octets")
     if octets:
@@ -361,15 +281,8 @@ def resumer(communication):
 
     return f"{ouverture}{suite}.{fin}{volume}"
 
-
 def _est_locale(adresse):
-    """
-    L'adresse appartient-elle a un reseau prive ?
 
-    Trois plages sont reservees aux reseaux internes :
-        10.0.0.0/8, 172.16.0.0/12 et 192.168.0.0/16.
-    Les adresses qui commencent par fe80 ou fc00 sont leurs equivalents IPv6.
-    """
     if not adresse:
         return False
     adresse = str(adresse)
@@ -385,7 +298,6 @@ def _est_locale(adresse):
     if adresse.lower().startswith(("fe80:", "fc", "fd")):
         return True
 
-    # 172.16.0.0 a 172.31.255.255
     if adresse.startswith("172."):
         morceaux = adresse.split(".")
         if len(morceaux) > 1:
@@ -396,18 +308,8 @@ def _est_locale(adresse):
 
     return False
 
-
 def expliquer(communication):
-    """
-    Produit l'explication complete d'une communication.
 
-    Le resultat rassemble tout ce que l'interface doit afficher, deja ordonne :
-
-        resume           la phrase principale, en francais courant
-        faits            ce qui a ete observe, sans interpretation
-        constats         ce qui a ete interprete, chacun avec sa base
-        comptes          combien d'observations et combien d'hypotheses
-    """
     from explication.faits import faits_observes, resume_chiffre
 
     constats = interpreter(communication)
@@ -421,10 +323,7 @@ def expliquer(communication):
         "constats": constats,
         "comptes": {
             "faits_observes": nb_observes,
-            # Les trois niveaux de CONSTATS. Un constat de niveau « observation »
-            # (un débit calculé, par exemple) n'est ni une interprétation ni une
-            # hypothèse : ne pas le compter laissait un total faux à l'écran, la
-            # somme des lignes ne correspondant pas au nombre de constats.
+
             "observations": sum(1 for c in constats if c["niveau"] == OBSERVATION),
             "interpretations": sum(1 for c in constats if c["niveau"] == INTERPRETATION),
             "hypotheses": sum(1 for c in constats if c["niveau"] == HYPOTHESE),

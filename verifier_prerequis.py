@@ -1,20 +1,4 @@
-"""
-Verification des prerequis techniques du projet.
 
-Le projet repose entierement sur une chose : pouvoir capturer du trafic reel. Sur
-Windows, cela exige un pilote de capture (Npcap, ou WinPcap). Sans lui, aucune
-bibliotheque Python ne peut lire les paquets — ni Scapy, ni pyshark.
-
-On verifie donc, dans l'ordre :
-
-    1. la presence du pilote de capture et de ses bibliotheques ;
-    2. la presence de tshark, l'outil en ligne de commande de Wireshark, qui est une
-       autre voie possible ;
-    3. l'etat de l'authentification GitHub, pour le depot obligatoire ;
-    4. la version de Python et la presence de pip.
-
-Aucun de ces controles ne modifie quoi que ce soit sur la machine.
-"""
 
 import os
 import shutil
@@ -27,7 +11,6 @@ print("  1. PILOTE DE CAPTURE (Npcap / WinPcap)")
 print("=" * 74)
 print()
 
-# Emplacements ou le pilote depose ses bibliotheques sur Windows.
 systeme = Path(os.environ.get("SystemRoot", r"C:\Windows"))
 candidats = [
     systeme / "System32" / "Npcap",
@@ -57,7 +40,6 @@ else:
 
 print()
 
-# Dossier d'installation de Npcap
 for dossier in [Path(r"C:\Program Files\Npcap"), Path(r"C:\Program Files (x86)\Npcap")]:
     if dossier.is_dir():
         print(f"  Dossier Npcap : {dossier}  (PRESENT)")
@@ -118,7 +100,6 @@ print(f"  version   : {sys.version.split()[0]}")
 print(f"  executable: {sys.executable}")
 print(f"  pip       : {'present' if shutil.which('pip') else 'absent du PATH'}")
 
-# Le compte courant est-il administrateur ?
 try:
     import ctypes
 

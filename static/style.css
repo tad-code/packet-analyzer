@@ -1,6 +1,4 @@
-/* Feuille de style unique de l'application.
-   Ecrite une seule fois, elle habille toutes les pages : chaque nouveau gabarit
-   herite de ces regles sans rien redefinir. */
+
 
 :root {
     --fond: #10151c;
@@ -28,10 +26,6 @@ body {
 
 .conteneur { max-width: 1360px; margin: 0 auto; padding: 0 24px; }
 
-/* Couleur des liens, valable partout. Sans cette regle, un lien ordinaire —
-   dans un paragraphe, un bandeau ou une legende — gardait le bleu par defaut
-   du navigateur, illisible sur fond sombre. Les regles plus precises (menu,
-   bouton-lien, tableaux) restent prioritaires. */
 a { color: var(--accent); }
 a:hover { color: #7fbcff; }
 
@@ -125,16 +119,12 @@ footer { border-top: 1px solid var(--bord); background: var(--fond-carte); paddi
 footer p { margin: 0 0 6px; font-size: 13px; color: var(--texte-doux); }
 footer a { color: var(--accent); }
 
-
-/* --- Version 2 : tableau de bord, communications, etats ------------------- */
-
 .deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
 @media (max-width: 1000px) { .deux-colonnes { grid-template-columns: 1fr; } }
 .deux-colonnes .carte { margin-bottom: 0; }
 .deux-colonnes + .deux-colonnes { margin-top: 22px; }
 .deux-colonnes + section, section + .deux-colonnes { margin-top: 22px; }
 
-/* Etat d'une communication, deduit des drapeaux TCP reellement observes. */
 .etat {
     display: inline-block; padding: 3px 10px; border-radius: 20px;
     font-size: 12.5px; font-weight: 600; white-space: nowrap;
@@ -154,7 +144,6 @@ a.bouton-lien {
 }
 a.bouton-lien:hover { filter: brightness(1.1); }
 
-/* Tableau « question / reponse » de la vue detaillee. */
 .tableau-questions { width: 100%; border-collapse: collapse; }
 .tableau-questions th {
     text-align: left; vertical-align: top; width: 300px; padding: 10px 16px 10px 0;
@@ -168,19 +157,12 @@ a.bouton-lien:hover { filter: brightness(1.1); }
 tbody td a { color: var(--accent); text-decoration: none; }
 tbody td a:hover { text-decoration: underline; }
 
-/* Le lien de retour en haut de la vue detaillee doit rester lisible. */
 p.petit a { color: var(--accent); }
-
-
-/* --- Version 2 : page Historique ----------------------------------------- */
 
 ol.etapes { margin: 12px 0 16px; padding-left: 22px; color: var(--texte-doux); }
 ol.etapes li { margin-bottom: 9px; }
 ol.etapes .mono, .bandeau .mono { color: var(--texte); }
 .carte h3 { color: var(--texte); font-weight: 600; }
-
-
-/* --- Version 3 : l'explication ------------------------------------------- */
 
 .phrase-principale {
     font-size: 1.06rem;
@@ -204,9 +186,6 @@ ol.etapes .mono, .bandeau .mono { color: var(--texte); }
 
 .comptes-explication strong { color: var(--texte); font-size: 1.05rem; }
 
-/* Les trois niveaux de certitude. La couleur dit ce que le mot dit deja :
-   l'observation est neutre, l'interpretation attire l'oeil, l'hypothese
-   avertit qu'il ne faut pas s'y fier. */
 .niveau {
     display: inline-block;
     padding: 2px 9px;
@@ -238,9 +217,6 @@ ol.etapes .mono, .bandeau .mono { color: var(--texte); }
     margin-top: 10px;
 }
 .fiche dd { margin: 3px 0 0; line-height: 1.6; }
-
-
-/* --- Version 4 : les alertes ---------------------------------------------- */
 
 .alerte { border-left: 3px solid var(--bord); }
 .alerte-information { border-left-color: #4a9eff; }
@@ -274,9 +250,6 @@ ol.etapes .mono, .bandeau .mono { color: var(--texte); }
 .tableau-alerte td { padding: 7px 0; vertical-align: top; line-height: 1.55; }
 
 .absent { color: var(--texte-doux); font-style: italic; }
-
-
-/* --- Version 4 : le mode en ligne ----------------------------------------- */
 
 .bandeau-lecture-seule {
     background: rgba(230, 170, 60, 0.12);

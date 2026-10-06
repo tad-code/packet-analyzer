@@ -1,0 +1,291 @@
+==============================================================================
+  EXPLICATIONS DU CODE — capture
+==============================================================================
+
+==============================================================================
+  capture\__init__.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  __init__.py
+------------------------------------------------------------------------------
+
+Etage 1 du projet : lire les paquets sur une interface reseau.
+
+
+
+==============================================================================
+  capture\interfaces.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  interfaces.py
+------------------------------------------------------------------------------
+
+Inventaire des interfaces reseau.
+
+Une interface, c'est une carte reseau : le Wi-Fi, le cable Ethernet, une carte
+virtuelle, ou encore l'interface de bouclage (loopback) qui sert au trafic interne
+a la machine.
+
+Pourquoi ce module est indispensable : sur la machine de l'analyste, Scapy voit
+souvent une dizaine d'interfaces, dont plusieurs ne transportent aucun trafic
+reel (cartes virtuelles creees par des logiciels, adaptateurs de diffusion directe
+Wi-Fi). L'utilisateur doit pouvoir les distinguer, sinon il capture sur la
+mauvaise et ne voit rien.
+
+
+------------------------------------------------------------------------------
+  fonction  _texte(valeur)
+------------------------------------------------------------------------------
+
+Rend une valeur affichable, ou None si elle est absente.
+
+
+------------------------------------------------------------------------------
+  fonction  est_virtuelle(nom, description)
+------------------------------------------------------------------------------
+
+Devine si une interface est virtuelle, d'apres son nom et sa description.
+
+    On ne fait que signaler : l'utilisateur reste libre de capturer dessus. Mais
+    un avertissement evite la confusion la plus frequente de ce genre d'outil.
+
+
+------------------------------------------------------------------------------
+  fonction  lister_interfaces()
+------------------------------------------------------------------------------
+
+Rend la liste des interfaces, sous forme de dictionnaires simples.
+
+    On n'expose pas les objets de Scapy vers l'interface web : seuls des
+    dictionnaires de chaines de caracteres traversent le programme. C'est ce qui
+    permet au reste du code d'ignorer comment Scapy fonctionne.
+
+    En cas d'echec de lecture, on rend une liste vide : l'appelant affichera
+    « aucune interface detectee » plutot que de planter.
+
+
+------------------------------------------------------------------------------
+  fonction  proposer_interface(interfaces, nom_souhaite)
+------------------------------------------------------------------------------
+
+Choisit l'interface a utiliser.
+
+    Ordre de preference : celle que l'utilisateur a demandee, puis celle qui est
+    enregistree dans la configuration, puis la premiere interface a la fois
+    utile et non virtuelle.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 76
+    Une interface illisible ne doit pas empecher de lister les autres.
+    code concerné : continue
+
+Ligne 79
+    On presente d'abord les interfaces qui ont une adresse IP reelle : ce sont
+    code concerné : # celles qui transportent du trafic.
+
+Ligne 80
+    celles qui transportent du trafic.
+    code concerné : resultat.sort(key=lambda i: (i["bouclage"], i["virtuelle"], not i["adresse_ip"], i["nom"]))
+
+
+
+==============================================================================
+  capture\moteur.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  moteur.py
+------------------------------------------------------------------------------
+
+Moteur de capture.
+
+Ce module est le seul du projet a parler directement au pilote reseau. Il fait
+trois choses :
+
+    1. demarrer l'ecoute sur une interface choisie ;
+    2. conserver les paquets lus dans un tampon limite en memoire ;
+    3. arreter proprement l'ecoute, et signaler ce qui s'est mal passe.
+
+Pourquoi l'ecoute tourne dans un fil d'execution separe : l'application web doit
+rester capable de repondre aux clics de l'utilisateur pendant la capture. Si
+l'ecoute occupait le fil principal, la page ne se rafraichirait plus.
+
+Pourquoi le tampon est limite : une capture d'une heure produit des centaines de
+milliers de paquets. Les garder tous epuiserait la memoire. On conserve donc les
+derniers, et on le dira clairement dans l'interface.
+
+
+------------------------------------------------------------------------------
+  classe  ErreurCapture
+------------------------------------------------------------------------------
+
+Erreur de capture portant un message comprehensible par l'utilisateur.
+
+
+------------------------------------------------------------------------------
+  classe  MoteurCapture
+------------------------------------------------------------------------------
+
+Ecoute une interface reseau et conserve les paquets lus.
+
+
+------------------------------------------------------------------------------
+  fonction  en_cours(self)
+------------------------------------------------------------------------------
+
+La capture est-elle active ?
+
+
+------------------------------------------------------------------------------
+  fonction  interface(self)
+------------------------------------------------------------------------------
+
+Nom de l'interface actuellement ecoutee.
+
+
+------------------------------------------------------------------------------
+  fonction  erreur(self)
+------------------------------------------------------------------------------
+
+Derniere erreur rencontree, ou None.
+
+
+------------------------------------------------------------------------------
+  fonction  total_vu(self)
+------------------------------------------------------------------------------
+
+Nombre total de paquets vus depuis le demarrage de la capture.
+
+
+------------------------------------------------------------------------------
+  fonction  paquets(self)
+------------------------------------------------------------------------------
+
+Copie de la liste des paquets conserves.
+
+        On rend une copie et non la liste elle-meme : sans cela, l'affichage
+        travaillerait sur une structure que le fil de capture est en train de
+        modifier, ce qui produit des erreurs difficiles a reproduire.
+
+
+------------------------------------------------------------------------------
+  fonction  demarrer(self, interface)
+------------------------------------------------------------------------------
+
+Lance l'ecoute sur une interface.
+
+        Leve ErreurCapture avec un message clair si l'ecoute ne peut pas
+        s'ouvrir : interface inexistante, droits insuffisants, pilote absent.
+
+
+------------------------------------------------------------------------------
+  fonction  arreter(self)
+------------------------------------------------------------------------------
+
+Arrete l'ecoute. Sans effet si aucune capture n'est en cours.
+
+
+------------------------------------------------------------------------------
+  fonction  vider(self)
+------------------------------------------------------------------------------
+
+Vide le tampon. Utile avant une nouvelle analyse.
+
+
+------------------------------------------------------------------------------
+  fonction  _recevoir(self, paquet)
+------------------------------------------------------------------------------
+
+Appelee par Scapy pour chaque paquet lu.
+
+        Le paquet est simplement mis de cote : sa lecture detaillee est faite
+        plus tard, par le module d'analyse. On separe ainsi la capture de
+        l'interpretation, ce qui permet de tester l'analyse sans reseau.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 39
+    Le verrou protege le tampon : un fil y ecrit, les autres le lisent.
+    code concerné : self._verrou = threading.Lock()
+
+Ligne 50
+    --- Etat ---------------------------------------------------------------
+
+Ligne 83
+    --- Commandes ----------------------------------------------------------
+
+Ligne 109
+    Point important, et verifie par l'experience :
+    code concerné : #
+
+Ligne 110
+    
+    code concerné : #   - AsyncSniffer ouvre l'interface dans un fil d'execution separe,
+
+Ligne 111
+    - AsyncSniffer ouvre l'interface dans un fil d'execution separe,
+    code concerné : #     et sa methode start() rend la main immediatement ;
+
+Ligne 112
+    et sa methode start() rend la main immediatement ;
+    code concerné : #   - si l'interface n'existe pas, start() NE LEVE PAS d'erreur ;
+
+Ligne 113
+    - si l'interface n'existe pas, start() NE LEVE PAS d'erreur ;
+    code concerné : #   - l'attribut `running` vaut True malgre l'echec : il ne faut donc
+
+Ligne 114
+    - l'attribut `running` vaut True malgre l'echec : il ne faut donc
+    code concerné : #     surtout pas s'y fier ;
+
+Ligne 115
+    surtout pas s'y fier ;
+    code concerné : #   - le vrai signal est l'attribut `exception`, qui contient le
+
+Ligne 116
+    - le vrai signal est l'attribut `exception`, qui contient le
+    code concerné : #     message d'erreur, et le fil d'ecoute, qui n'est plus vivant.
+
+Ligne 117
+    message d'erreur, et le fil d'ecoute, qui n'est plus vivant.
+    code concerné : #
+
+Ligne 118
+    
+    code concerné : # Sans ce controle, l'application annoncerait « capture demarree »
+
+Ligne 119
+    Sans ce controle, l'application annoncerait « capture demarree »
+    code concerné : # alors que rien n'ecoute — le pire des mensonges pour un outil
+
+Ligne 120
+    alors que rien n'ecoute — le pire des mensonges pour un outil
+    code concerné : # d'analyse.
+
+Ligne 121
+    d'analyse.
+    code concerné : time.sleep(0.6)
+
+Ligne 139
+    Deja formee plus haut : on la laisse remonter telle quelle.
+    code concerné : raise
+
+Ligne 184
+    --- Reception ----------------------------------------------------------
+
+Ligne 197
+    Au-dela de la limite, on oublie les plus anciens.
+    code concerné : if len(self._paquets) > self._taille_tampon:
+

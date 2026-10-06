@@ -1,0 +1,218 @@
+==============================================================================
+  EXPLICATIONS DU CODE — enrichissement
+==============================================================================
+
+==============================================================================
+  enrichissement\__init__.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  __init__.py
+------------------------------------------------------------------------------
+
+Etage 8 du projet : identifier les adresses distantes.
+
+Une adresse IP ne dit rien a personne. Ce module demande a un service externe
+a qui elle appartient et ou elle se trouve.
+
+Regle de conception : l'enrichissement est un CONFORT, jamais une dependance.
+S'il echoue — reseau coupe, quota depasse, service indisponible — l'analyse
+reste complete. Les adresses s'affichent, simplement sans pays ni operateur.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 12
+    noqa: F401
+    code concerné : enrichir,
+
+
+
+==============================================================================
+  enrichissement\adresses.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  adresses.py
+------------------------------------------------------------------------------
+
+Enrichissement des adresses par une API externe.
+
+Une adresse comme « 18.233.182.23 » ne dit rien a personne. L'enrichissement
+repond a la question : a qui appartient cette adresse, et dans quel pays se
+trouve-t-elle ?
+
+Trois choix, et ils meritent d'etre justifies.
+
+    - On interroge ip-api.com, qui ne demande AUCUNE cle. Un projet etudiant
+      n'a pas a dependre d'un compte payant pour illustrer une fonctionnalite.
+
+    - On interroge en lot : jusqu'a cent adresses par requete. Le service
+      autorise quarante-cinq requetes par minute ; une requete par adresse
+      epuiserait ce quota en quelques secondes sur une capture reelle.
+
+    - On ne met en cache QUE ce qui a ete obtenu. Une adresse inconnue n'est
+      pas enregistree comme telle : sinon une panne passagere serait figee dans
+      le fichier, et l'adresse resterait sans reponse pour toujours.
+
+L'enrichissement est un CONFORT. S'il echoue, l'analyse reste complete : les
+adresses s'affichent, simplement sans pays ni operateur. Rien ne depend de lui.
+
+
+------------------------------------------------------------------------------
+  fonction  est_publique(adresse)
+------------------------------------------------------------------------------
+
+Indique si une adresse est routable sur Internet.
+
+    On n'interroge pas l'API pour une adresse privee : la question n'a pas de
+    sens pour elle — une adresse 192.168.x.x n'appartient a aucun pays — et
+    l'envoyer a un service externe revelerait la structure du reseau local de
+    l'utilisateur sans rien lui apprendre en retour.
+
+
+------------------------------------------------------------------------------
+  fonction  lire_cache()
+------------------------------------------------------------------------------
+
+Rend le cache, ou un cache vide s'il est absent ou illisible.
+
+
+------------------------------------------------------------------------------
+  fonction  ecrire_cache(cache)
+------------------------------------------------------------------------------
+
+Enregistre le cache, sans jamais faire echouer l'appelant.
+
+
+------------------------------------------------------------------------------
+  fonction  interroger_api(adresses)
+------------------------------------------------------------------------------
+
+Interroge l'API en lots, et rend un dictionnaire adresse -> informations.
+
+    Leve en cas d'echec reseau : c'est a l'appelant de decider quoi faire. Ici,
+    on ne decide rien — on rapporte fidelement.
+
+
+------------------------------------------------------------------------------
+  fonction  enrichir(adresses, interroger, cache)
+------------------------------------------------------------------------------
+
+Enrichit une liste d'adresses, en n'interrogeant l'API que pour les nouvelles.
+
+    'interroger' permet de fournir une autre source dans les tests : sans cela,
+    la suite de tests dependrait d'un service externe, et echouerait le jour ou
+    le reseau est coupe — pour une raison qui n'a rien a voir avec le code.
+
+    Rend un dictionnaire adresse -> informations, et ne leve jamais : un
+    enrichissement impossible n'est pas une erreur, c'est une absence.
+
+
+------------------------------------------------------------------------------
+  fonction  resume(info)
+------------------------------------------------------------------------------
+
+Met une information d'enrichissement en une phrase courte.
+
+    On n'ecrit que ce que l'on sait. Si le pays manque, on ne l'invente pas :
+    on affiche ce qui est present, et rien d'autre.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 29
+    Le fichier de cache vit dans le projet, mais n'est pas versionne : il contient
+    code concerné : # des adresses observees chez l'utilisateur.
+
+Ligne 30
+    des adresses observees chez l'utilisateur.
+    code concerné : CACHE = Path(__file__).resolve().parent.parent / "donnees" / "cache_enrichissement.json"
+
+Ligne 55
+    Adresses de multidiffusion et plages reservees. Elles n'appartiennent a
+    code concerné : # aucun pays : le service repond « reserved range », ce qui n'apprend rien
+
+Ligne 56
+    aucun pays : le service repond « reserved range », ce qui n'apprend rien
+    code concerné : # et consomme un quota. Rencontre sur une vraie capture, avec 239.255.255.250.
+
+Ligne 57
+    et consomme un quota. Rencontre sur une vraie capture, avec 239.255.255.250.
+    code concerné : if adresse.startswith("ff"):                  # multidiffusion IPv6
+
+Ligne 58
+    multidiffusion IPv6
+    code concerné : return False
+
+Ligne 60
+    224.0.0.0 a 255.x.x.x
+    code concerné : premier = adresse.split(".")[0]
+
+Ligne 74
+    adresses locales IPv6
+    code concerné : return False
+
+Ligne 79
+    ---------------------------------------------------------------------------
+    code concerné : #  Le cache
+
+Ligne 80
+    Le cache
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 81
+    ---------------------------------------------------------------------------
+
+Ligne 88
+    Un cache corrompu ne doit pas empecher l'application de fonctionner :
+    code concerné : # on repart de zero plutot que d'echouer.
+
+Ligne 89
+    on repart de zero plutot que d'echouer.
+    code concerné : return {}
+
+Ligne 99
+    un cache qu'on ne peut pas ecrire n'est pas une raison d'arreter
+
+Ligne 102
+    ---------------------------------------------------------------------------
+    code concerné : #  L'interrogation
+
+Ligne 103
+    L'interrogation
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 104
+    ---------------------------------------------------------------------------
+
+Ligne 139
+    L'API a repondu, mais sans resultat : on le retient, sinon on
+    code concerné : # reposerait la meme question a chaque analyse.
+
+Ligne 140
+    reposerait la meme question a chaque analyse.
+    code concerné : resultats[adresse] = {"erreur": info.get("message") or "réponse sans résultat"}
+
+Ligne 143
+    On respecte la limite annoncee par le service (45 requetes par minute).
+    code concerné : if debut + LOT_MAX < len(adresses):
+
+Ligne 176
+    noqa: BLE001
+    code concerné : # Panne reseau, service indisponible, quota depasse : on continue
+
+Ligne 177
+    Panne reseau, service indisponible, quota depasse : on continue
+    code concerné : # sans enrichissement. L'analyse reste complete.
+
+Ligne 178
+    sans enrichissement. L'analyse reste complete.
+    code concerné : print(f"  (enrichissement indisponible : {type(e).__name__} — {str(e)[:80]})")
+

@@ -1,20 +1,4 @@
-"""
-Verification de l'ecriture reelle dans Supabase.
 
-Ce script fait ce qu'aucun test unitaire ne peut faire : il parle vraiment a la
-base distante. Il deroule un aller-retour complet, et verifie le resultat.
-
-    1. La base est-elle utilisable ?
-    2. Ecriture d'une analyse
-    3. Ecriture de communications rattachees
-    4. Relecture, et comparaison champ par champ
-    5. Suppression, et verification de l'effacement en cascade
-
-Les donnees de test sont SUPPRIMEES a la fin : l'historique de l'utilisateur ne
-doit pas contenir de trace d'essai, surtout le jour d'une soutenance.
-
-Aucune cle n'est affichee.
-"""
 
 import sys
 from pathlib import Path
@@ -22,15 +6,13 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RACINE))
 
-from stockage import supabase  # noqa: E402
-
+from stockage import supabase
 
 def titre(texte):
     print()
     print("=" * 74)
     print(f"  {texte}")
     print("=" * 74)
-
 
 titre("1. LA BASE EST-ELLE UTILISABLE ?")
 
@@ -42,14 +24,11 @@ if not disponible:
     print("  La cle a privileges eleves n'est pas encore en place.")
     raise SystemExit(1)
 
-# On montre a quoi ressemble la cle, sans jamais la reveler.
 cle = supabase._cle()
 genre = "moderne « sb_secret_... »" if cle.startswith("sb_secret") else \
         ("historique « service_role »" if cle.startswith("eyJ") else "non reconnue")
 print(f"  cle        : {len(cle)} caracteres, de type {genre}")
 
-
-# ---------------------------------------------------------------------------
 titre("2. ECRITURE D'UNE ANALYSE")
 
 essai = {
@@ -79,8 +58,6 @@ analyse_id = ecrites[0]["id"]
 print(f"  analyse ecrite, identifiant recu : {analyse_id}")
 print(f"  le champ « debut » a ete rempli par la base : {ecrites[0].get('debut')}")
 
-
-# ---------------------------------------------------------------------------
 titre("3. ECRITURE DES COMMUNICATIONS")
 
 communications = [
@@ -119,8 +96,6 @@ except supabase.ErreurBase as e:
 
 print(f"  {len(ecrites_com)} communications ecrites")
 
-
-# ---------------------------------------------------------------------------
 titre("4. RELECTURE")
 
 lues_a = supabase.lire("reseau_analyses", "id=eq." + str(analyse_id))
@@ -144,14 +119,11 @@ for c in lues_c:
     print(f"    {c.get('protocole')} {c.get('ip_premiere')}:{c.get('port_premiere')} -> "
           f"{c.get('ip_seconde')}:{c.get('port_seconde')}  ({c.get('service_probable')})")
 
-# Le tri par port : la base doit savoir repondre a cette question.
 tri = supabase.lire("reseau_communications",
                     "analyse_id=eq." + str(analyse_id),
                     ordre="port_service.asc")
 print(f"  tri par port croissant : {[c.get('port_service') for c in tri]}")
 
-
-# ---------------------------------------------------------------------------
 titre("5. SUPPRESSION ET EFFACEMENT EN CASCADE")
 
 supprimees = supabase.supprimer("reseau_analyses", "id=eq." + str(analyse_id))
@@ -164,12 +136,6 @@ print(f"  communications restantes : {len(restantes)} "
 reste_a = supabase.lire("reseau_analyses", "id=eq." + str(analyse_id))
 print(f"  analyses restantes    : {len(reste_a)}")
 
-# ---------------------------------------------------------------------------
-# Controle de l'ENSEMBLE de la table, et non de la seule ligne de ce script.
-# Un essai precedent avait laisse une ligne derriere lui ; ce script avait
-# conclu « rien d'autre en base » sans l'avoir verifie. On mesure, on ne
-# suppose pas.
-# ---------------------------------------------------------------------------
 total_a = supabase.compter("reseau_analyses")
 total_c = supabase.compter("reseau_communications")
 print()

@@ -1,20 +1,4 @@
-"""
-Test de faisabilite de la capture — script jetable, pas du code de projet.
 
-But : repondre a une seule question, avant d'ecrire la moindre ligne du projet.
-
-    Scapy est-il capable, sur CETTE machine, de voir les interfaces reseau et de
-    lire des paquets reels ?
-
-Si la reponse est non, toute l'architecture doit etre repensee. Mieux vaut le savoir
-maintenant qu'apres trois jours de developpement.
-
-La methode : on lance une capture en arriere-plan pendant qu'on fabrique volontairement
-du trafic (une resolution DNS et une requete HTTP), puis on verifie que les paquets
-correspondants ont bien ete interceptes.
-
-Le script ne modifie rien sur la machine et n'ecrit aucun fichier.
-"""
 
 import threading
 import time
@@ -51,21 +35,18 @@ print()
 
 paquets = []
 
-
 def capturer():
-    """Ecoute le reseau pendant 8 secondes et conserve les paquets vus."""
+
     try:
         captures = sniff(timeout=8, store=True)
         paquets.extend(captures)
     except Exception as e:
         print(f"  [ERREUR DE CAPTURE] {type(e).__name__} : {e}")
 
-
 def fabriquer_trafic():
-    """Attend un instant, puis provoque du trafic observable."""
+
     time.sleep(2)
 
-    # Une resolution DNS : genere un paquet UDP vers le port 53.
     try:
         import socket
 
@@ -74,7 +55,6 @@ def fabriquer_trafic():
     except Exception as e:
         print(f"  trafic : echec de la resolution DNS ({e})")
 
-    # Une requete HTTP : genere un paquet TCP vers le port 80.
     try:
         import urllib.request
 
@@ -82,7 +62,6 @@ def fabriquer_trafic():
         print("  trafic : requete HTTP vers example.com envoyee")
     except Exception as e:
         print(f"  trafic : echec de la requete HTTP ({type(e).__name__})")
-
 
 fil_capture = threading.Thread(target=capturer)
 fil_trafic = threading.Thread(target=fabriquer_trafic)
@@ -105,7 +84,6 @@ else:
         resume = p.summary()
         print(f"    {i:2d}. {resume[:100]}")
 
-    # Verifions que nous savons extraire les champs qui interessent le projet.
     print()
     print("=" * 74)
     print("  3. EXTRACTION DES CHAMPS UTILES POUR L'ANALYSE")

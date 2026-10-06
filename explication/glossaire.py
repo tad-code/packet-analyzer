@@ -1,21 +1,5 @@
-"""
-Glossaire.
 
-Le projet emploie un vocabulaire technique. Ce module le definit une fois, en
-francais simple, sans supposer que le lecteur connaisse deja les termes.
 
-Deux raisons, et la seconde compte davantage :
-
-    - un utilisateur qui ne comprend pas un mot ne peut pas juger de la fiabilite
-      de ce qu'on lui affiche ;
-    - un correcteur qui lit « drapeau RST » dans une explication doit pouvoir
-      verifier que le programme emploie le mot a bon escient.
-
-Chaque entree tient en deux ou trois phrases. Si une definition demande un
-paragraphe, c'est qu'elle est mal ecrite.
-"""
-
-# Chaque entree : le mot, sa definition, et pourquoi il compte dans ce projet.
 GLOSSAIRE = [
     {"mot": "Paquet",
      "definition": "Un petit bloc de donnees envoye sur le reseau. Le reseau decoupe tout ce qu'il transporte en paquets.",

@@ -1,0 +1,275 @@
+==============================================================================
+  EXPLICATIONS DU CODE — detection
+==============================================================================
+
+==============================================================================
+  detection\__init__.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  __init__.py
+------------------------------------------------------------------------------
+
+Etage 5 du projet : reperer ce qui merite l'attention.
+
+Les regles vivent dans `regles.py`. Ce module expose le point d'entree.
+
+Terme employe avec soin : une ALERTE n'est pas un verdict. Chaque regle dit ce
+qu'elle a observe, ce qu'elle en deduit, et propose une verification — jamais une
+conclusion a la place de l'utilisateur.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 11
+    noqa: F401
+    code concerné : ATTENTION,
+
+
+
+==============================================================================
+  detection\regles.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  regles.py
+------------------------------------------------------------------------------
+
+Les regles de detection.
+
+Une alerte ne dit pas « c'est une attaque ». Elle dit : « ceci merite votre
+attention, et voici pourquoi ». La nuance n'est pas de la prudence de facade :
+un outil qui annonce une attaque a tort sera ignore apres le deuxieme faux
+positif, et n'aura servi a rien.
+
+Chaque regle suit la meme forme que celles de l'explication :
+
+    - elle cite les communications qui l'ont declenchee ;
+    - elle indique sur quel fait observe elle repose ;
+    - elle ne se declenche jamais sur une donnee absente.
+
+Les regles recoivent l'ensemble des communications, et non une seule : les
+signaux interessants — un balayage, des refus repetes, une machine qui parle a
+cinquante serveurs — ne se voient que sur l'ensemble.
+
+
+------------------------------------------------------------------------------
+  fonction  _alerte(regle, gravite, titre, explication, base, communications, conseil)
+------------------------------------------------------------------------------
+
+Fabrique une alerte, toujours avec sa base observee.
+
+
+------------------------------------------------------------------------------
+  fonction  regle_service_en_clair(communications, contexte)
+------------------------------------------------------------------------------
+
+Telnet, FTP, HTTP : le contenu circule sans chiffrement.
+
+    Ce n'est pas une attaque, et c'est souvent legitime — un vieux site, un
+    equipement ancien. Mais ce qui passe est lisible par quiconque est sur le
+    chemin, et c'est une information utile.
+
+    On se limite aux ports dont le defaut est connu : on ne deduit pas qu'une
+    communication est en clair parce qu'elle n'est pas sur le port 443.
+
+
+------------------------------------------------------------------------------
+  fonction  regle_refus_repetes(communications, contexte)
+------------------------------------------------------------------------------
+
+Plusieurs connexions refusees : une machine frappe, et l'autre ferme.
+
+    C'est la signature habituelle d'un balayage de ports. C'est aussi ce que
+    produit une application mal configuree qui reessaie en boucle. On signale
+    dans les deux cas, sans trancher.
+
+
+------------------------------------------------------------------------------
+  fonction  regle_destinations_multiples(communications, contexte)
+------------------------------------------------------------------------------
+
+Une seule machine locale parle a de nombreuses adresses distantes.
+
+    Au-dela d'un certain nombre, ce n'est plus de la navigation ordinaire : cela
+    ressemble a une recherche systematique, ou a un logiciel qui contacte sa
+    flotte de serveurs.
+
+
+------------------------------------------------------------------------------
+  fonction  regle_connexions_repetees(communications, contexte)
+------------------------------------------------------------------------------
+
+Beaucoup de connexions breves vers la même adresse.
+
+    C'est la forme que prend un logiciel qui « telephone » regulierement a un
+    serveur pour lui demander s'il a du travail : un canal de commande. C'est
+    aussi un comportement parfaitement banal pour un client de messagerie.
+    On signale la forme, pas la conclusion.
+
+
+------------------------------------------------------------------------------
+  fonction  regle_volume_important(communications, contexte)
+------------------------------------------------------------------------------
+
+Une seule communication concentre une part importante du volume total.
+
+    Cela peut etre un telechargement legitime, une sauvegarde, une mise a jour.
+    Cela peut aussi etre une exfiltration. Le fait observable, lui, est precis :
+    une communication a transporte beaucoup plus que les autres.
+
+
+------------------------------------------------------------------------------
+  fonction  regle_service_non_identifie(communications, contexte)
+------------------------------------------------------------------------------
+
+Un port inconnu, mais un echange soutenu.
+
+    Un service non identifie qui transporte beaucoup de donnees merite d'etre
+    nomme : c'est souvent un service legitime deplace sur un port inhabituel,
+    mais tant qu'on ne sait pas, on le signale.
+
+
+------------------------------------------------------------------------------
+  fonction  ordonner(alertes)
+------------------------------------------------------------------------------
+
+De la plus grave a la plus discrete.
+
+
+------------------------------------------------------------------------------
+  fonction  analyser(communications, contexte)
+------------------------------------------------------------------------------
+
+Applique toutes les regles et rend les alertes, ordonnees.
+
+    Une regle qui echoue ne doit pas empecher les autres de s'exprimer : sur des
+    donnees inattendues, on l'ignore et on continue. Une alerte manquante est
+    facheuse ; un plantage qui masque tout l'est davantage.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 20
+    Gravites, de la plus discrete a la plus forte.
+    code concerné : INFORMATION = "information"
+
+Ligne 46
+    ---------------------------------------------------------------------------
+    code concerné : #  1. Un service qui circule en clair
+
+Ligne 47
+    1. Un service qui circule en clair
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 48
+    ---------------------------------------------------------------------------
+
+Ligne 91
+    ---------------------------------------------------------------------------
+    code concerné : #  2. Des refus repetes
+
+Ligne 92
+    2. Des refus repetes
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 93
+    ---------------------------------------------------------------------------
+
+Ligne 122
+    ---------------------------------------------------------------------------
+    code concerné : #  3. Une meme machine interroge beaucoup de serveurs
+
+Ligne 123
+    3. Une meme machine interroge beaucoup de serveurs
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 124
+    ---------------------------------------------------------------------------
+
+Ligne 165
+    ---------------------------------------------------------------------------
+    code concerné : #  4. Des connexions courtes et repetees vers la meme destination
+
+Ligne 166
+    4. Des connexions courtes et repetees vers la meme destination
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 167
+    ---------------------------------------------------------------------------
+
+Ligne 182
+    La destination est l'extremite distante, en choisissant l'adresse non locale.
+    code concerné : premiere = c.get("ip_premiere") or ""
+
+Ligne 215
+    ---------------------------------------------------------------------------
+    code concerné : #  5. Un volume inhabituel
+
+Ligne 216
+    5. Un volume inhabituel
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 217
+    ---------------------------------------------------------------------------
+
+Ligne 239
+    « 100 % » pour 99,98 % est un arrondi qui exagere : il laisse croire que
+    code concerné : # TOUT le volume est passe par la, alors que d'autres communications ont
+
+Ligne 240
+    TOUT le volume est passe par la, alors que d'autres communications ont
+    code concerné : # transporte quelque chose. Au-dela de 99 %, on le dit autrement.
+
+Ligne 241
+    transporte quelque chose. Au-dela de 99 %, on le dit autrement.
+    code concerné : pourcentage = "plus de 99 %" if part >= 0.99 else f"{part:.0%}"
+
+Ligne 258
+    ---------------------------------------------------------------------------
+    code concerné : #  6. Un service qui n'a pas pu etre identifie
+
+Ligne 259
+    6. Un service qui n'a pas pu etre identifie
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 260
+    ---------------------------------------------------------------------------
+
+Ligne 296
+    ---------------------------------------------------------------------------
+    code concerné : #  L'ensemble des regles
+
+Ligne 297
+    L'ensemble des regles
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 298
+    ---------------------------------------------------------------------------
+
+Ligne 300
+    L'identifiant d'une regle est le MEME que celui porte par ses alertes. Deux
+    code concerné : #  orthographes differentes — un libelle lisible ici, un identifiant technique
+
+Ligne 301
+    orthographes differentes — un libelle lisible ici, un identifiant technique
+    code concerné : #  la — faisaient qu'une regle declenchee apparaissait aussi parmi celles qui ne
+
+Ligne 302
+    la — faisaient qu'une regle declenchee apparaissait aussi parmi celles qui ne
+    code concerné : #  l'avaient pas ete. Le defaut a ete constate sur une vraie capture.
+
+Ligne 303
+    l'avaient pas ete. Le defaut a ete constate sur une vraie capture.
+    code concerné : REGLES = [
+
+Ligne 332
+    noqa: BLE001
+    code concerné : print(f"  (regle « {nom} » ignoree : {type(e).__name__} — {e})")
+

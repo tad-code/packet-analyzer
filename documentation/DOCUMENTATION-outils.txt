@@ -1,0 +1,1037 @@
+==============================================================================
+  EXPLICATIONS DU CODE — tools
+==============================================================================
+
+==============================================================================
+  tools\analyser_capture.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  analyser_capture.py
+------------------------------------------------------------------------------
+
+Appliquer les regles de detection a une capture enregistree.
+
+Usage :
+    python tools/analyser_capture.py          (la capture la plus recente)
+    python tools/analyser_capture.py 6        (la capture numero 6)
+
+Cet outil sert a deux choses :
+
+    - verifier que les regles se comportent correctement sur des donnees REELLES,
+      et non seulement sur les cas fabriques par les tests ;
+    - lire le detail des alertes sans passer par le navigateur.
+
+Il ne modifie rien : il lit la base et affiche.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 23
+    noqa: E402
+    code concerné : from communications.regroupement import statistiques  # noqa: E402
+
+Ligne 24
+    noqa: E402
+    code concerné : from detection import analyser  # noqa: E402
+
+Ligne 25
+    noqa: E402
+    code concerné : from explication.adaptateur import depuis_ligne_enregistree  # noqa: E402
+
+Ligne 26
+    noqa: E402
+    code concerné : from stockage import supabase  # noqa: E402
+
+Ligne 27
+    noqa: E402
+
+Ligne 34
+    ---------------------------------------------------------------------------
+    code concerné : # Quelle capture analyser ?
+
+Ligne 35
+    Quelle capture analyser ?
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 36
+    ---------------------------------------------------------------------------
+    code concerné : if len(sys.argv) > 1:
+
+Ligne 66
+    ---------------------------------------------------------------------------
+    code concerné : # Les alertes
+
+Ligne 67
+    Les alertes
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 68
+    ---------------------------------------------------------------------------
+    code concerné : alertes = analyser(communications, contexte)
+
+Ligne 96
+    ---------------------------------------------------------------------------
+    code concerné : # Ce qui N'a PAS declenche
+
+Ligne 97
+    Ce qui N'a PAS declenche
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 98
+    ---------------------------------------------------------------------------
+    code concerné : from detection.regles import REGLES  # noqa: E402
+
+Ligne 99
+    noqa: E402
+
+
+
+==============================================================================
+  tools\capturer_historique.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  capturer_historique.py
+------------------------------------------------------------------------------
+
+Captures d'ecran de l'historique rempli.
+
+On emploie le Chrome installe sur la machine, avec --no-proxy-server : le proxy
+systeme fait echouer l'acces a 127.0.0.1. Contrainte de cette machine.
+
+
+------------------------------------------------------------------------------
+  fonction  aller(page, adresse, essais)
+------------------------------------------------------------------------------
+
+Ouvre une page, avec reprise.
+
+    Le pilote de navigateur echoue parfois par « ERR_ABORTED » alors que le
+    serveur repond normalement, en moins d'une seconde : c'est une instabilite
+    du pilote, pas un defaut de l'application. Sans reprise, une capture
+    manquerait pour une raison qui n'a rien a voir avec le projet.
+
+
+------------------------------------------------------------------------------
+  fonction  capturer(page, nom, chemin)
+------------------------------------------------------------------------------
+
+Capture une page si elle repond, et rend le compte rendu.
+
+
+
+==============================================================================
+  tools\capturer_interface.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  capturer_interface.py
+------------------------------------------------------------------------------
+
+Captures d'ecran de l'interface, pour la documentation.
+
+Le script demarre une capture, fabrique du trafic, puis photographie chaque page.
+Il termine par l'arret de la capture.
+
+Pourquoi fabriquer du trafic : une capture d'ecran d'un tableau vide ne prouve
+rien. Les images doivent montrer des donnees reelles.
+
+Prerequis : playwright installe dans l'interpreteur qui execute ce script, et
+Google Chrome installe sur la machine.
+
+Deux precautions necessaires sur cette machine :
+    - channel="chrome"        : on emploie le Chrome installe ;
+    - args --no-proxy-server  : un proxy systeme fait echouer Chrome sur 127.0.0.1.
+
+
+------------------------------------------------------------------------------
+  fonction  aller(page, adresse, essais, attente)
+------------------------------------------------------------------------------
+
+Ouvre une page, avec reprise.
+
+    Le pilote de navigateur echoue parfois par « ERR_ABORTED » alors que le
+    serveur repond en moins d'une seconde. C'est une instabilite du pilote, pas
+    un defaut de l'application : sans reprise, une capture manquerait pour une
+    raison qui n'a rien a voir avec le projet.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 86
+    --- 1. Capture --------------------------------------------------------------
+    code concerné : print("  demarrage de la capture...")
+
+Ligne 96
+    --- 2. Photographies --------------------------------------------------------
+    code concerné : DOSSIER.mkdir(parents=True, exist_ok=True)
+
+Ligne 107
+    « networkidle » ne convient pas : pendant une capture, la page se
+    code concerné : # recharge toutes les 2 secondes et le reseau n'est donc jamais au repos.
+
+Ligne 108
+    recharge toutes les 2 secondes et le reseau n'est donc jamais au repos.
+    code concerné : # L'attente du DOM suffit, et fonctionne dans les deux cas.
+
+Ligne 109
+    L'attente du DOM suffit, et fonctionne dans les deux cas.
+    code concerné : if not aller(page, BASE + chemin):
+
+Ligne 117
+    --- 3. La vue detaillee d'une communication reelle ----------------------
+    code concerné : page.goto(BASE + "/communications", wait_until="domcontentloaded")
+
+Ligne 121
+    L'attribut href est relatif (« /communication/... ») : le navigateur
+    code concerné : # exige une adresse complete, on la reconstitue.
+
+Ligne 122
+    exige une adresse complete, on la reconstitue.
+    code concerné : adresse = lien.get_attribute("href")
+
+
+
+==============================================================================
+  tools\capturer_version3.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  capturer_version3.py
+------------------------------------------------------------------------------
+
+Captures d'ecran.
+
+On emploie le Chrome installe sur la machine, avec --no-proxy-server : le proxy
+systeme fait echouer l'acces a 127.0.0.1. Contrainte de cette machine.
+
+
+------------------------------------------------------------------------------
+  fonction  aller(page, adresse, essais)
+------------------------------------------------------------------------------
+
+Ouvre une page, avec reprise.
+
+    Le pilote de navigateur echoue parfois par « ERR_ABORTED » alors que le
+    serveur repond normalement, en moins d'une seconde : c'est une instabilite
+    du pilote, pas un defaut de l'application. Sans reprise, une capture
+    manquerait pour une raison qui n'a rien a voir avec le projet.
+
+
+------------------------------------------------------------------------------
+  fonction  capturer(page, nom, chemin)
+------------------------------------------------------------------------------
+
+Capture une page si elle repond, et rend le compte rendu.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 65
+    Une communication enregistree : on suit le premier lien trouve.
+    code concerné : if aller(page, BASE + "/historique/6"):
+
+
+
+==============================================================================
+  tools\capturer_version4.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  capturer_version4.py
+------------------------------------------------------------------------------
+
+Captures d'ecran des pages de la version 4.
+
+Deux instances sont interrogees : celle en mode local (port 5000) qui capture,
+et celle en mode en ligne (port 5001) qui lit la base. C'est la demonstration de
+l'architecture « une base de code, deux modes ».
+
+
+
+==============================================================================
+  tools\doc_cles_supabase.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  doc_cles_supabase.py
+------------------------------------------------------------------------------
+
+Recuperer la procedure officielle pour trouver les cles d'API Supabase.
+
+Le tableau de bord Supabase change souvent de libelles. Plutot que de decrire un
+ecran de memoire et d'envoyer l'utilisateur dans la mauvaise direction, on lit la
+documentation actuelle.
+
+On cherche en particulier :
+
+    - ou se trouvent les cles dans le tableau de bord ;
+    - si une cle secrete peut etre relue apres sa creation ;
+    - comment en creer une nouvelle.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 63
+    On ne garde que les passages evocateurs.
+    code concerné : interessants = []
+
+
+
+==============================================================================
+  tools\etat_supabase.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  etat_supabase.py
+------------------------------------------------------------------------------
+
+Verifier l'etat du projet Supabase.
+
+Un projet Supabase du plan gratuit se met en pause apres une semaine sans
+activite. Tant qu'il est en pause, AUCUNE requete n'aboutit : ni lecture, ni
+ecriture. L'API repond alors une erreur caracteristique, et non un code 404 ou
+401 que l'on pourrait confondre avec un probleme de cle.
+
+Ce script interroge le projet pour savoir dans quel cas on se trouve :
+
+    - projet en pause     -> il faut le reactiver depuis le tableau de bord ;
+    - projet actif        -> il repond, et le probleme vient d'ailleurs.
+
+Il ne modifie rien et n'ecrit aucune donnee.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 24
+    On lit l'adresse du projet dans le fichier .env, sans afficher la cle.
+    code concerné : adresse = None
+
+Ligne 42
+    ---------------------------------------------------------------------------
+    code concerné : # 1. La racine de l'API repond-elle ?
+
+Ligne 43
+    1. La racine de l'API repond-elle ?
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 44
+    ---------------------------------------------------------------------------
+    code concerné : try:
+
+Ligne 59
+    ---------------------------------------------------------------------------
+    code concerné : # 2. Le domaine du projet existe-t-il seulement ?
+
+Ligne 60
+    2. Le domaine du projet existe-t-il seulement ?
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 61
+    ---------------------------------------------------------------------------
+    code concerné : try:
+
+
+
+==============================================================================
+  tools\retirer_commentaires.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  fonction  spans_python(source)
+------------------------------------------------------------------------------
+
+Rend les intervalles a supprimer : commentaires et chaines de documentation.
+
+
+------------------------------------------------------------------------------
+  fonction  retirer(source, spans)
+------------------------------------------------------------------------------
+
+Supprime les intervalles donnes, du dernier au premier.
+
+
+------------------------------------------------------------------------------
+  fonction  nettoyer_sql(chemin)
+------------------------------------------------------------------------------
+
+Retire les lignes de commentaire d'un script SQL.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 15
+    1. Les commentaires. On passe par l'analyseur lexical, et non par une
+    code concerné : #    recherche de « # » : un diese peut apparaitre dans une chaine de
+
+Ligne 16
+    recherche de « # » : un diese peut apparaitre dans une chaine de
+    code concerné : #    caracteres — une couleur CSS comme « #4a9eff », une adresse avec un
+
+Ligne 17
+    caracteres — une couleur CSS comme « #4a9eff », une adresse avec un
+    code concerné : #    fragment. Les couper casserait le code.
+
+Ligne 18
+    fragment. Les couper casserait le code.
+    code concerné : try:
+
+Ligne 26
+    2. Les chaines de documentation. On les repere par leur position dans
+    code concerné : #    l'arbre syntaxique : ce sont les premieres instructions d'un module,
+
+Ligne 27
+    l'arbre syntaxique : ce sont les premieres instructions d'un module,
+    code concerné : #    d'une fonction ou d'une classe.
+
+Ligne 28
+    d'une fonction ou d'une classe.
+    code concerné : try:
+
+Ligne 69
+    On nettoie les lignes devenues vides : deux lignes blanches suffisent.
+    code concerné : texte = re.sub(r"\n{3,}", "\n\n", texte)
+
+Ligne 72
+    Une ligne blanche juste apres une ligne de code indentee, en debut de
+    code concerné : # fonction, laisse un trou disgracieux. On le referme.
+
+Ligne 73
+    fonction, laisse un trou disgracieux. On le referme.
+    code concerné : texte = re.sub(r"(:\n)\n+\s*(?=\S)", r"\1", texte)
+
+Ligne 88
+    Securite : le resultat doit encore etre du Python valide. Sans ce
+    code concerné : # controle, une erreur d'intervalle produirait un fichier casse, et on ne
+
+Ligne 89
+    controle, une erreur d'intervalle produirait un fichier casse, et on ne
+    code concerné : # s'en apercevrait qu'a l'execution.
+
+Ligne 90
+    s'en apercevrait qu'a l'execution.
+    code concerné : try:
+
+Ligne 107
+    On evite une accumulation de lignes blanches.
+    code concerné : texte = re.sub(r"\n{3,}", "\n\n", "\n".join(gardees)) + "\n"
+
+
+
+==============================================================================
+  tools\tester_application.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  tester_application.py
+------------------------------------------------------------------------------
+
+Test fonctionnel de l'application.
+
+Ce script n'est pas un test unitaire : il interroge l'application reellement
+lancee, comme le ferait un navigateur. C'est ce qui permet d'affirmer que
+l'application fonctionne, et pas seulement que le code compile.
+
+Ce qu'il verifie, dans l'ordre :
+
+    1. le service repond et annonce son mode ;
+    2. le tableau de bord s'affiche, meme sans donnee ;
+    3. la page de capture propose les interfaces et les commandes ;
+    4. une capture demarre et du trafic reel apparait ;
+    5. le regroupement produit des communications coherentes ;
+    6. le detail d'une communication repond aux sept questions exigees ;
+    7. la capture s'arrete proprement ;
+    8. les cas d'erreur se comportent comme prevu.
+
+Usage :  python tools/tester_application.py
+
+
+------------------------------------------------------------------------------
+  fonction  demander(chemin, methode, donnees)
+------------------------------------------------------------------------------
+
+Envoie une requete et rend (code, contenu).
+
+    Le contenu est decode : les gabarits ecrivent « d&#39;ouvrir » la ou le texte
+    d'origine porte une apostrophe. Sans ce decodage, un controle sur une phrase
+    contenant une apostrophe echouerait alors que la page est correcte.
+
+
+------------------------------------------------------------------------------
+  fonction  fabriquer_trafic()
+------------------------------------------------------------------------------
+
+Provoque du trafic observable : DNS et requetes HTTP.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 82
+    -- 1. Le service ------------------------------------------------------------
+    code concerné : print("1. Le service repond")
+
+Ligne 89
+    -- 2. Le tableau de bord ----------------------------------------------------
+    code concerné : print("2. Le tableau de bord")
+
+Ligne 102
+    -- 3. La page de capture ----------------------------------------------------
+    code concerné : print("3. La page de capture")
+
+Ligne 118
+    -- 4. Capture et trafic -----------------------------------------------------
+    code concerné : print("4. Capture de trafic reel")
+
+Ligne 137
+    -- 5. Le regroupement en communications -------------------------------------
+    code concerné : print("5. Le regroupement en communications")
+
+Ligne 155
+    -- 6. Le detail d'une communication -----------------------------------------
+    code concerné : print("6. Le detail d'une communication")
+
+Ligne 182
+    -- 7. Arret -----------------------------------------------------------------
+    code concerné : print("7. Arret de la capture")
+
+Ligne 192
+    -- 8. Cas d'erreur ----------------------------------------------------------
+    code concerné : print("8. Cas d'erreur")
+
+Ligne 203
+    La page doit etre utile DANS LES DEUX CAS : soit elle explique ce qui manque,
+    code concerné : # soit elle affiche les captures enregistrees. Un controle qui n'accepterait
+
+Ligne 204
+    soit elle affiche les captures enregistrees. Un controle qui n'accepterait
+    code concerné : # qu'un seul des deux etats signalerait un faux probleme.
+
+Ligne 205
+    qu'un seul des deux etats signalerait un faux probleme.
+    code concerné : base_prete = "pas disponible" not in page
+
+Ligne 218
+    --- Les pages de la version 3 -------------------------------------------------
+    code concerné : code, page = demander("/protocoles")
+
+Ligne 231
+    On suit le premier lien vers une capture, puis vers une de ses communications.
+    code concerné : # La liste des captures ne mene pas directement a une communication : il faut
+
+Ligne 232
+    La liste des captures ne mene pas directement a une communication : il faut
+    code concerné : # deux sauts, et l'oublier faisait echouer ce controle a tort.
+
+Ligne 233
+    deux sauts, et l'oublier faisait echouer ce controle a tort.
+    code concerné : import re as _re
+
+Ligne 264
+    -- Synthese -----------------------------------------------------------------
+    code concerné : reussis = sum(1 for _, c, _ in resultats if c)
+
+
+
+==============================================================================
+  tools\tester_bout_en_bout.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  tester_bout_en_bout.py
+------------------------------------------------------------------------------
+
+Test de bout en bout, dans l'application reelle.
+
+Le parcours complet de l'utilisateur, sans raccourci :
+
+    1. demarrer une capture ;
+    2. produire du trafic reseau ;
+    3. arreter la capture ;
+    4. enregistrer la capture dans Supabase ;
+    5. verifier qu'elle apparait dans l'historique.
+
+Puis les donnees de test sont supprimees : l'historique doit rester propre.
+
+Ce test emploie le serveur HTTP, et non les fonctions internes. C'est ce qui le
+distingue des tests unitaires : il verifie le chemin que l'utilisateur emprunte
+vraiment, formulaires et redirections compris.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 58
+    ---------------------------------------------------------------------------
+    code concerné : # 1. L'interface proposee par l'application
+
+Ligne 59
+    1. L'interface proposee par l'application
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 60
+    ---------------------------------------------------------------------------
+    code concerné : print()
+
+Ligne 79
+    ---------------------------------------------------------------------------
+    code concerné : # 2. Capture
+
+Ligne 80
+    2. Capture
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 81
+    ---------------------------------------------------------------------------
+    code concerné : print()
+
+Ligne 88
+    On genere du trafic reel : sans cela, la capture pourrait ne rien voir, et
+    code concerné : # l'echec ne dirait rien de l'application.
+
+Ligne 89
+    l'echec ne dirait rien de l'application.
+    code concerné : import concurrent.futures  # noqa: E402
+
+Ligne 90
+    noqa: E402
+    code concerné : import requests  # noqa: E402
+
+Ligne 91
+    noqa: E402
+
+Ligne 101
+    un site injoignable n'a aucune importance ici
+
+Ligne 114
+    On interroge la sonde /health, prevue pour etre lue par une machine, plutot
+    code concerné : # que d'extraire un nombre du HTML : la mise en page peut changer, le contrat
+
+Ligne 115
+    que d'extraire un nombre du HTML : la mise en page peut changer, le contrat
+    code concerné : # de la sonde non.
+
+Ligne 116
+    de la sonde non.
+    code concerné : import json  # noqa: E402
+
+Ligne 117
+    noqa: E402
+
+Ligne 131
+    ---------------------------------------------------------------------------
+    code concerné : # 3. Enregistrement
+
+Ligne 132
+    3. Enregistrement
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 133
+    ---------------------------------------------------------------------------
+    code concerné : print()
+
+Ligne 144
+    noqa: E402
+
+Ligne 158
+    ---------------------------------------------------------------------------
+    code concerné : # 4. Historique
+
+Ligne 159
+    4. Historique
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 160
+    ---------------------------------------------------------------------------
+    code concerné : print()
+
+Ligne 173
+    ---------------------------------------------------------------------------
+    code concerné : # 4 bis. Les alertes
+
+Ligne 174
+    4 bis. Les alertes
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 175
+    ---------------------------------------------------------------------------
+    code concerné : print()
+
+Ligne 186
+    Les alertes de la capture en cours sont-elles enregistrees ?
+    code concerné : try:
+
+Ligne 200
+    ---------------------------------------------------------------------------
+    code concerné : # 5. Nettoyage
+
+Ligne 201
+    5. Nettoyage
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 202
+    ---------------------------------------------------------------------------
+    code concerné : print()
+
+Ligne 214
+    Le controle porte sur CE QUE CE TEST a cree, jamais sur l'ensemble de la base :
+    code concerné : # d'autres captures peuvent exister, et exiger une base vide faisait echouer le
+
+Ligne 215
+    d'autres captures peuvent exister, et exiger une base vide faisait echouer le
+    code concerné : # test a tort.
+
+Ligne 216
+    test a tort.
+    code concerné : if garder:
+
+
+
+==============================================================================
+  tools\tester_enrichissement.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  tester_enrichissement.py
+------------------------------------------------------------------------------
+
+Interroger reellement le service d'enrichissement.
+
+Les tests unitaires verifient la logique avec une source fabriquee : ils ne
+prouvent pas que l'API repond, ni que le format attendu est le bon. Ce script
+fait l'appel pour de vrai, sur les adresses d'une capture enregistree.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 15
+    noqa: E402
+    code concerné : from stockage import supabase  # noqa: E402
+
+Ligne 16
+    noqa: E402
+
+Ligne 25
+    On rassemble les adresses distantes rencontrees, sans doublon.
+    code concerné : vues, ordre = set(), []
+
+
+
+==============================================================================
+  tools\trouver_acces_supabase.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  trouver_acces_supabase.py
+------------------------------------------------------------------------------
+
+Localiser les acces Supabase deja presents sur la machine.
+
+Objectif : reutiliser un projet existant plutot que d'en creer un nouveau.
+
+Regle de securite absolue : ce script n'AFFICHE JAMAIS une valeur secrete. Il indique
+seulement :
+
+    - les fichiers qui declarent des variables Supabase ;
+    - le NOM de chaque variable ;
+    - une forme masquee, qui permet de reconnaitre la variable sans la reveler.
+
+On scanne les emplacements plausibles : les dossiers de projets de l'utilisateur, le
+dossier de configuration de Hermes, et les variables d'environnement de la session.
+
+
+------------------------------------------------------------------------------
+  fonction  masquer(nom, valeur)
+------------------------------------------------------------------------------
+
+Donne une forme reconnaissable sans reveler le secret.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 21
+    --- Emplacements a explorer -------------------------------------------------
+    code concerné : RACINES = [
+
+Ligne 23
+    On cherche dans Documents, sans nommer de dossier d'etablissement :
+    code concerné : # un chemin personnel n'a rien a faire dans un depot.
+
+Ligne 24
+    un chemin personnel n'a rien a faire dans un depot.
+    code concerné : Path.home() / "Documents",
+
+Ligne 40
+    Une URL se montre : elle n'est pas un secret.
+    code concerné : if valeur.startswith(("http://", "https://")):
+
+Ligne 57
+    On cherche les fichiers d'environnement, a profondeur limitee.
+    code concerné : for chemin in list(racine.rglob(".env*"))[:400] + list(racine.rglob("*.env"))[:200]:
+
+Ligne 61
+    On ignore les environnements virtuels : trop de faux positifs.
+    code concerné : if any(p in chemin.parts for p in (".venv", "venv", "node_modules", "site-packages")):
+
+Ligne 92
+    --- Variables de la session courante ----------------------------------------
+    code concerné : print("=" * 74)
+
+
+
+==============================================================================
+  tools\verifier_capture.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  verifier_capture.py
+------------------------------------------------------------------------------
+
+Test de faisabilite de la capture — script jetable, pas du code de projet.
+
+But : repondre a une seule question, avant d'ecrire la moindre ligne du projet.
+
+    Scapy est-il capable, sur CETTE machine, de voir les interfaces reseau et de
+    lire des paquets reels ?
+
+Si la reponse est non, toute l'architecture doit etre repensee. Mieux vaut le savoir
+maintenant qu'apres trois jours de developpement.
+
+La methode : on lance une capture en arriere-plan pendant qu'on fabrique volontairement
+du trafic (une resolution DNS et une requete HTTP), puis on verifie que les paquets
+correspondants ont bien ete interceptes.
+
+Le script ne modifie rien sur la machine et n'ecrit aucun fichier.
+
+
+------------------------------------------------------------------------------
+  fonction  capturer()
+------------------------------------------------------------------------------
+
+Ecoute le reseau pendant 8 secondes et conserve les paquets vus.
+
+
+------------------------------------------------------------------------------
+  fonction  fabriquer_trafic()
+------------------------------------------------------------------------------
+
+Attend un instant, puis provoque du trafic observable.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 68
+    Une resolution DNS : genere un paquet UDP vers le port 53.
+    code concerné : try:
+
+Ligne 77
+    Une requete HTTP : genere un paquet TCP vers le port 80.
+    code concerné : try:
+
+Ligne 108
+    Verifions que nous savons extraire les champs qui interessent le projet.
+    code concerné : print()
+
+
+
+==============================================================================
+  tools\verifier_ecriture_supabase.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  verifier_ecriture_supabase.py
+------------------------------------------------------------------------------
+
+Verification de l'ecriture reelle dans Supabase.
+
+Ce script fait ce qu'aucun test unitaire ne peut faire : il parle vraiment a la
+base distante. Il deroule un aller-retour complet, et verifie le resultat.
+
+    1. La base est-elle utilisable ?
+    2. Ecriture d'une analyse
+    3. Ecriture de communications rattachees
+    4. Relecture, et comparaison champ par champ
+    5. Suppression, et verification de l'effacement en cascade
+
+Les donnees de test sont SUPPRIMEES a la fin : l'historique de l'utilisateur ne
+doit pas contenir de trace d'essai, surtout le jour d'une soutenance.
+
+Aucune cle n'est affichee.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 25
+    noqa: E402
+
+Ligne 45
+    On montre a quoi ressemble la cle, sans jamais la reveler.
+    code concerné : cle = supabase._cle()
+
+Ligne 52
+    ---------------------------------------------------------------------------
+    code concerné : titre("2. ECRITURE D'UNE ANALYSE")
+
+Ligne 83
+    ---------------------------------------------------------------------------
+    code concerné : titre("3. ECRITURE DES COMMUNICATIONS")
+
+Ligne 123
+    ---------------------------------------------------------------------------
+    code concerné : titre("4. RELECTURE")
+
+Ligne 147
+    Le tri par port : la base doit savoir repondre a cette question.
+    code concerné : tri = supabase.lire("reseau_communications",
+
+Ligne 154
+    ---------------------------------------------------------------------------
+    code concerné : titre("5. SUPPRESSION ET EFFACEMENT EN CASCADE")
+
+Ligne 167
+    ---------------------------------------------------------------------------
+    code concerné : # Controle de l'ENSEMBLE de la table, et non de la seule ligne de ce script.
+
+Ligne 168
+    Controle de l'ENSEMBLE de la table, et non de la seule ligne de ce script.
+    code concerné : # Un essai precedent avait laisse une ligne derriere lui ; ce script avait
+
+Ligne 169
+    Un essai precedent avait laisse une ligne derriere lui ; ce script avait
+    code concerné : # conclu « rien d'autre en base » sans l'avoir verifie. On mesure, on ne
+
+Ligne 170
+    conclu « rien d'autre en base » sans l'avoir verifie. On mesure, on ne
+    code concerné : # suppose pas.
+
+Ligne 171
+    suppose pas.
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 172
+    ---------------------------------------------------------------------------
+    code concerné : total_a = supabase.compter("reseau_analyses")
+
+
+
+==============================================================================
+  tools\verifier_schema_sql.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  verifier_schema_sql.py
+------------------------------------------------------------------------------
+
+Verifier le script SQL contre le PostgreSQL local.
+
+Objectif : ne pas faire decouvrir a l'utilisateur, dans l'editeur SQL de
+Supabase, une erreur que l'on pouvait detecter ici.
+
+On cree une base JETABLE, on y execute le script, on verifie que les tables
+existent et que la securite par ligne est bien activee, puis on supprime la
+base. Rien n'est laisse derriere, et la base du projet Mini SOC n'est pas
+touchee : on ne s'y connecte meme pas.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 22
+    ---------------------------------------------------------------------------
+    code concerné : # 1. Retrouver les parametres de connexion du PostgreSQL portable
+
+Ligne 23
+    1. Retrouver les parametres de connexion du PostgreSQL portable
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 24
+    ---------------------------------------------------------------------------
+    code concerné : # L'adresse du serveur de verification est fournie par l'environnement. On ne
+
+Ligne 25
+    L'adresse du serveur de verification est fournie par l'environnement. On ne
+    code concerné : # code AUCUN chemin en dur : ce script doit pouvoir tourner sur une autre
+
+Ligne 26
+    code AUCUN chemin en dur : ce script doit pouvoir tourner sur une autre
+    code concerné : # machine, et un chemin personnel n'a rien a faire dans un depot.
+
+Ligne 27
+    machine, et un chemin personnel n'a rien a faire dans un depot.
+    code concerné : url = os.getenv("VERIF_PG_URL") or None
+
+Ligne 43
+    On n'affiche JAMAIS le mot de passe : on ne montre que la forme.
+    code concerné : montrable = re.sub(r"://[^@]+@", "://***:***@", url)
+
+Ligne 47
+    Base jetable, pour ne rien melanger avec les donnees existantes.
+    code concerné : url_serveur = url.rsplit("/", 1)[0] + "/postgres"
+
+Ligne 74
+    --- Les tables existent-elles ? ---
+    code concerné : with base.cursor() as cur:
+
+Ligne 84
+    --- La securite par ligne est-elle active ? ---
+    code concerné : with base.cursor() as cur:
+
+Ligne 97
+    --- Les index ? ---
+    code concerné : with base.cursor() as cur:
+
+Ligne 107
+    --- La contrainte de rattachement fonctionne-t-elle ? ---
+    code concerné : with base.cursor() as cur:
+
+Ligne 123
+    --- La suppression en cascade fonctionne-t-elle ? ---
+    code concerné : with base.cursor() as cur:
+
+Ligne 131
+    --- La contrainte d'etat refuse-t-elle une valeur incoherente ? ---
+    code concerné : with base.cursor() as cur:
+
+Ligne 142
+    --- Nettoyage ---
+    code concerné : with psycopg.connect(url_serveur, autocommit=True) as cx:
+

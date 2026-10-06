@@ -1,10 +1,4 @@
-"""
-Captures d'ecran des pages de la version 4.
 
-Deux instances sont interrogees : celle en mode local (port 5000) qui capture,
-et celle en mode en ligne (port 5001) qui lit la base. C'est la demonstration de
-l'architecture « une base de code, deux modes ».
-"""
 
 import time
 from pathlib import Path
@@ -14,7 +8,6 @@ from playwright.sync_api import sync_playwright
 RACINE = Path(__file__).resolve().parent.parent
 DOCS = RACINE / "docs"
 DOCS.mkdir(exist_ok=True)
-
 
 def aller(page, adresse, essais=3):
     derniere = None
@@ -28,7 +21,6 @@ def aller(page, adresse, essais=3):
             time.sleep(1.5)
     print(f"      (echec : {str(derniere)[:60]})")
     return False
-
 
 PAGES = [
     ("alertes",             "http://127.0.0.1:5000/alertes"),

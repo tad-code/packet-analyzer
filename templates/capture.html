@@ -19,8 +19,6 @@
     </p>
 </section>
 {% endif %}
-
-{# --- Ce que fait cet ecran ------------------------------------------------ #}
 <section class="carte">
     <h2>Que fait cet écran ?</h2>
     <p>
@@ -34,8 +32,6 @@
         Cette version se limite à <strong>capturer et afficher</strong>.
     </p>
 </section>
-
-{# --- Bandeaux d'information et d'erreur ----------------------------------- #}
 {% if message %}
     <div class="bandeau info">{{ message }}</div>
 {% endif %}
@@ -53,8 +49,6 @@
         <p class="petit">{{ erreur_capture }}</p>
     </div>
 {% endif %}
-
-{# --- Commandes ------------------------------------------------------------ #}
 <section class="carte">
     <h2>Capture</h2>
 
@@ -134,8 +128,6 @@
 
     {% endif %}
 </section>
-
-{# --- Liste des paquets ---------------------------------------------------- #}
 <section class="carte">
     <h2>Paquets observés</h2>
 
@@ -184,10 +176,6 @@
         passe sur l'interface choisie — ouvrez une page web pour en produire.
     </p>
     {% endif %}
-
-    {# Exigence permanente du projet : aucun élément ne s'affiche sans explication.
-       Cette légende reste visible même sans paquet, pour que l'utilisateur
-       comprenne ce que l'outil montrera avant même de lancer une capture. #}
     <details class="legende">
         <summary>Que signifie chaque colonne ?</summary>
         <dl>

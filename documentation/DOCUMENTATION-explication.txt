@@ -1,0 +1,583 @@
+==============================================================================
+  EXPLICATIONS DU CODE — explication
+==============================================================================
+
+==============================================================================
+  explication\__init__.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  __init__.py
+------------------------------------------------------------------------------
+
+Etage 6 du projet : transformer des faits observes en phrases comprehensibles.
+
+C'est la fonctionnalite centrale du cahier des charges. Elle repose sur une
+regle simple, et non negociable :
+
+    ce qui est OBSERVE et ce qui est DEDUIT ne sont jamais melanges.
+
+Chaque phrase produite sait de quel fait elle provient. Quand une donnee
+manque, on l'annonce au lieu de la combler.
+
+Point d'entree :
+
+    from explication import expliquer
+    explication = expliquer(communication)
+
+    explication["resume"]           la phrase principale
+    explication["faits"]            ce qui a ete vu
+    explication["constats"]         ce qui en a ete deduit, et sur quoi
+    explication["comptes"]          combien d'observations, combien d'hypotheses
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 23
+    noqa: F401
+    code concerné : HYPOTHESE,
+
+
+
+==============================================================================
+  explication\adaptateur.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  adaptateur.py
+------------------------------------------------------------------------------
+
+Adaptateur entre les deux formes d'une communication.
+
+Le projet manipule la meme realite sous deux representations :
+
+    - la forme VIVANTE, produite par le regroupement a partir des paquets ;
+      les extremites y sont des dictionnaires complets — adresse, port, nombre
+      de paquets envoyes et recus, sens de l'echange ;
+
+    - la forme ENREGISTREE, telle que la base la restitue ; les extremites y
+      sont eclatees en colonnes — « ip_premiere », « port_premiere », etc.
+
+Sans cet adaptateur, il faudrait ecrire DEUX moteurs d'explication, et les
+tenir a jour tous les deux. Le jour ou une phrase change, l'historique et la
+vue en direct divergeraient. C'est exactement ce que ce projet doit eviter.
+
+Une seule regle : tout ce qui arrive a l'explication passe d'abord par ici.
+
+
+------------------------------------------------------------------------------
+  fonction  _lisible(horodatage)
+------------------------------------------------------------------------------
+
+Rend un horodatage lisible, sans dependre d'une bibliotheque de dates.
+
+    La base renvoie « 2026-10-06T10:39:51.123456+00:00 ». On ne garde que la
+    date, l'heure et les secondes : les microsecondes et le decalage horaire
+    n'apportent rien a la comprehension, et l'information complete reste dans
+    la base si on en a besoin.
+
+
+------------------------------------------------------------------------------
+  fonction  _extremite(ip, port)
+------------------------------------------------------------------------------
+
+Reconstruit une extremite sous la forme attendue par le moteur.
+
+
+------------------------------------------------------------------------------
+  fonction  depuis_ligne_enregistree(ligne)
+------------------------------------------------------------------------------
+
+Convertit une ligne de la base en communication comprehensible par le moteur.
+
+    Les champs absents de la base restent absents : on ne les invente pas. Le
+    moteur les signalera comme « non disponible », ce qui est l'information
+    juste — le sens de l'echange n'est pas conserve, et l'explication ne doit
+    pas laisser croire le contraire.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 78
+    Le regroupement marque une communication « active » tant qu'elle
+    code concerné : # echange encore ; la base conserve un etat, pas ce booleen. On le
+
+Ligne 79
+    echange encore ; la base conserve un etat, pas ce booleen. On le
+    code concerné : # reconstruit a partir de l'etat, sinon les statistiques — qui s'en
+
+Ligne 80
+    reconstruit a partir de l'etat, sinon les statistiques — qui s'en
+    code concerné : # servent — echouent sur des donnees venues de l'historique.
+
+Ligne 81
+    servent — echouent sur des donnees venues de l'historique.
+    code concerné : "active": ligne.get("etat") == "en cours",
+
+Ligne 83
+    Ces deux champs ne sont pas conserves en base. On ne les invente pas :
+    code concerné : # l'explication signalera leur absence, et c'est volontaire — mieux vaut
+
+Ligne 84
+    l'explication signalera leur absence, et c'est volontaire — mieux vaut
+    code concerné : # une lacune annoncee qu'une valeur fabriquee.
+
+Ligne 85
+    une lacune annoncee qu'une valeur fabriquee.
+    code concerné : "sens_a_vers_b": ligne.get("sens_a_vers_b"),
+
+
+
+==============================================================================
+  explication\faits.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  faits.py
+------------------------------------------------------------------------------
+
+Extraction des faits observes.
+
+Ce module repond a une seule question :
+
+    « Qu'est-ce que l'analyseur a REELLEMENT vu ? »
+
+Aucune deduction, aucune supposition, aucune phrase d'interpretation. Un fait est
+une valeur extraite d'un paquet, avec le nom du champ dont elle vient.
+
+La regle qui gouverne tout ce fichier : un champ absent donne « non disponible ».
+On n'invente jamais une valeur, et on ne met jamais un tiret muet : l'utilisateur
+doit savoir que l'information manque, et non croire qu'elle est vide.
+
+C'est la securite principale contre le risque d'inventer une conclusion. Elle est
+structurelle, et non une simple recommandation : l'interpretation, elle, vit dans
+phrases.py et ne peut lire que ce que ce module a produit.
+
+
+------------------------------------------------------------------------------
+  fonction  _valeur(valeur, unite, manquant)
+------------------------------------------------------------------------------
+
+Presente une valeur, ou dit clairement qu'elle manque.
+
+
+------------------------------------------------------------------------------
+  fonction  _extremite(extremite)
+------------------------------------------------------------------------------
+
+Presente une extremite « adresse:port », ou None si elle est inconnue.
+
+    On rend None et non la chaine « non disponible » : c'est le role de _valeur()
+    de decider comment afficher une absence. Rendre ici une chaine deja formatee
+    faisait passer le fait pour disponible, alors que sa valeur disait le
+    contraire — le test l'a attrape.
+
+
+------------------------------------------------------------------------------
+  fonction  _volume(octets)
+------------------------------------------------------------------------------
+
+Presente un volume dans une unite lisible, ou None s'il est inconnu.
+
+
+------------------------------------------------------------------------------
+  fonction  _duree(secondes)
+------------------------------------------------------------------------------
+
+Presente une duree dans une unite lisible, ou None si elle est inconnue.
+
+
+------------------------------------------------------------------------------
+  fonction  faits_observes(communication)
+------------------------------------------------------------------------------
+
+Rend la liste des faits observes pour une communication.
+
+    Chaque fait porte trois elements :
+
+        champ   : le nom du champ d'origine — c'est la traçabilite, on peut
+                  remonter jusqu'au paquet ;
+        libelle : ce que l'on a regarde ;
+        valeur  : ce que l'on a trouve, ou « non disponible ».
+
+
+------------------------------------------------------------------------------
+  fonction  faits_disponibles(communication)
+------------------------------------------------------------------------------
+
+Nombre de faits réellement observes, et non « non disponible ».
+
+
+------------------------------------------------------------------------------
+  fonction  resume_chiffre(communication)
+------------------------------------------------------------------------------
+
+Resume chiffre : ce qui a ete observe, sans aucune interpretation.
+
+    Sert de phrase d'ouverture, et de point de depart a l'utilisateur qui veut
+    verifier par lui-meme.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 22
+    Ce qu'on affiche quand une information n'a pas ete observee.
+    code concerné : INDISPONIBLE = "non disponible"
+
+Ligne 35
+    Le formatage des adresses vit dans « analyse » : le regroupement en a
+    code concerné : # besoin aussi, et il ne doit pas dependre de l'etage des phrases.
+
+Ligne 36
+    besoin aussi, et il ne doit pas dependre de l'etage des phrases.
+    code concerné : from analyse.adresses import adresse_complete  # noqa: F401
+
+Ligne 37
+    noqa: F401
+
+
+
+==============================================================================
+  explication\glossaire.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  glossaire.py
+------------------------------------------------------------------------------
+
+Glossaire.
+
+Le projet emploie un vocabulaire technique. Ce module le definit une fois, en
+francais simple, sans supposer que le lecteur connaisse deja les termes.
+
+Deux raisons, et la seconde compte davantage :
+
+    - un utilisateur qui ne comprend pas un mot ne peut pas juger de la fiabilite
+      de ce qu'on lui affiche ;
+    - un correcteur qui lit « drapeau RST » dans une explication doit pouvoir
+      verifier que le programme emploie le mot a bon escient.
+
+Chaque entree tient en deux ou trois phrases. Si une definition demande un
+paragraphe, c'est qu'elle est mal ecrite.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 18
+    Chaque entree : le mot, sa definition, et pourquoi il compte dans ce projet.
+    code concerné : GLOSSAIRE = [
+
+
+
+==============================================================================
+  explication\phrases.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  phrases.py
+------------------------------------------------------------------------------
+
+Production de l'explication en langage humain.
+
+C'est la fonctionnalite centrale du projet : transformer des chiffres en phrases
+comprehensibles, sans jamais confondre ce qui est observe avec ce qui est deduit.
+
+Trois niveaux, et ils sont affiches differemment dans l'interface :
+
+    OBSERVATION     un fait, lu directement dans le paquet. Rien n'est suppose.
+    INTERPRETATION  une lecture de ce fait, fondee sur une connaissance generale.
+                    On dit « generalement », jamais « c'est ».
+    HYPOTHESE       une possibilite, quand les donnees ne permettent pas de
+                    conclure. On dit « peut-etre », « il est possible que ».
+
+REGLE ABSOLUE : chaque interpretation porte la mention du fait observe sur lequel
+elle repose (le champ « base »). Une interpretation sans base observable n'est pas
+produite. C'est ce qui rend l'explication verifiable : l'utilisateur peut toujours
+remonter du raisonnement a la donnee.
+
+Ce module ne lit jamais un paquet. Il ne connait que le dictionnaire de
+communication, deja construit. Il ne peut donc pas inventer une observation :
+tout ce qu'il peut dire vient de ce qu'on lui a donne.
+
+
+------------------------------------------------------------------------------
+  fonction  _regle_service_connu(communication)
+------------------------------------------------------------------------------
+
+Le port du service correspond a un service dont le role est etabli.
+
+
+------------------------------------------------------------------------------
+  fonction  _regle_service_inconnu(communication)
+------------------------------------------------------------------------------
+
+Le port ne figure pas parmi les services connus.
+
+
+------------------------------------------------------------------------------
+  fonction  _regle_contenu_chiffre(communication)
+------------------------------------------------------------------------------
+
+Le port est celui d'un service chiffre par convention.
+
+
+------------------------------------------------------------------------------
+  fonction  _regle_fermeture_et_refus(communication)
+------------------------------------------------------------------------------
+
+Les deux drapeaux FIN et RST ont ete observes sur la meme communication.
+
+    Cas rencontre sur une vraie capture, et il faut le dire : afficher cote a cote
+    « la connexion s'est fermee proprement » et « elle a ete interrompue
+    brutalement » serait contradictoire, et laisserait l'utilisateur sans reponse.
+
+
+------------------------------------------------------------------------------
+  fonction  _regle_fermeture_propre(communication)
+------------------------------------------------------------------------------
+
+Un drapeau FIN a ete observe, sans RST.
+
+
+------------------------------------------------------------------------------
+  fonction  _regle_connexion_refusee(communication)
+------------------------------------------------------------------------------
+
+Un drapeau RST a ete observe, sans FIN.
+
+
+------------------------------------------------------------------------------
+  fonction  _regle_ouverture_sans_reponse(communication)
+------------------------------------------------------------------------------
+
+Un SYN a ete vu, mais rien ne vient en retour.
+
+
+------------------------------------------------------------------------------
+  fonction  _regle_echange_unidirectionnel(communication)
+------------------------------------------------------------------------------
+
+Des paquets dans un seul sens, sans SYN.
+
+
+------------------------------------------------------------------------------
+  fonction  _regle_debit(communication)
+------------------------------------------------------------------------------
+
+Calcule un debit moyen, quand la duree permet de le faire.
+
+
+------------------------------------------------------------------------------
+  fonction  _regle_communication_longue(communication)
+------------------------------------------------------------------------------
+
+Une communication qui dure longtemps avec peu de paquets.
+
+
+------------------------------------------------------------------------------
+  fonction  _regle_volume_important(communication)
+------------------------------------------------------------------------------
+
+Un volume eleve en peu de temps.
+
+
+------------------------------------------------------------------------------
+  fonction  interpreter(communication)
+------------------------------------------------------------------------------
+
+Applique les regles et rend la liste des constats produits.
+
+    Chaque constat porte son niveau et le fait observe qui le fonde. Une regle qui
+    ne s'applique pas ne produit rien : on ne remplit pas la page de phrases vides.
+
+
+------------------------------------------------------------------------------
+  fonction  resumer(communication)
+------------------------------------------------------------------------------
+
+Produit la phrase d'explication principale, en francais courant.
+
+    Elle est construite a partir des seuls elements presents. Si une information
+    manque, la phrase s'adapte : elle ne complete jamais un trou par une supposition.
+
+
+------------------------------------------------------------------------------
+  fonction  _est_locale(adresse)
+------------------------------------------------------------------------------
+
+L'adresse appartient-elle a un reseau prive ?
+
+    Trois plages sont reservees aux reseaux internes :
+        10.0.0.0/8, 172.16.0.0/12 et 192.168.0.0/16.
+    Les adresses qui commencent par fe80 ou fc00 sont leurs equivalents IPv6.
+
+
+------------------------------------------------------------------------------
+  fonction  expliquer(communication)
+------------------------------------------------------------------------------
+
+Produit l'explication complete d'une communication.
+
+    Le resultat rassemble tout ce que l'interface doit afficher, deja ordonne :
+
+        resume           la phrase principale, en francais courant
+        faits            ce qui a ete observe, sans interpretation
+        constats         ce qui a ete interprete, chacun avec sa base
+        comptes          combien d'observations et combien d'hypotheses
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 28
+    Les trois niveaux de certitude.
+    code concerné : OBSERVATION = "observation"
+
+Ligne 33
+    Libelles affiches dans l'interface, avec la couleur associee.
+    code concerné : NIVEAUX = {
+
+Ligne 51
+    Ports dont le contenu est chiffre par convention.
+    code concerné : PORTS_CHIFFRES = {443, 8443, 993, 995, 465, 636}
+
+Ligne 55
+    ---------------------------------------------------------------------------
+    code concerné : # Les regles d'interpretation
+
+Ligne 56
+    Les regles d'interpretation
+    code concerné : #
+
+Ligne 57
+    
+    code concerné : # Une fonction par regle. Chacune rend un dictionnaire ou None si la regle ne
+
+Ligne 58
+    Une fonction par regle. Chacune rend un dictionnaire ou None si la regle ne
+    code concerné : # s'applique pas. Cette forme rend chaque regle lisible, testable seule, et
+
+Ligne 59
+    s'applique pas. Cette forme rend chaque regle lisible, testable seule, et
+    code concerné : # facile a expliquer a l'oral : « cette fonction dit ceci, et voici sa condition ».
+
+Ligne 60
+    facile a expliquer a l'oral : « cette fonction dit ceci, et voici sa condition ».
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 61
+    ---------------------------------------------------------------------------
+
+Ligne 137
+    La combinaison des deux est traitee par sa propre regle : deux
+    code concerné : # affirmations contraires ne doivent pas coexister.
+
+Ligne 138
+    affirmations contraires ne doivent pas coexister.
+    code concerné : return None
+
+Ligne 250
+    Ordre d'evaluation des regles. L'ordre compte : les regles generales viennent
+    code concerné : # apres les regles precises, pour que l'explication la plus utile soit lue en
+
+Ligne 251
+    apres les regles precises, pour que l'explication la plus utile soit lue en
+    code concerné : # premier.
+
+Ligne 252
+    premier.
+    code concerné : REGLES = [
+
+Ligne 254
+    La combinaison FIN + RST vient EN PREMIER : les deux regles suivantes
+    code concerné : # s'effacent devant elle, sinon elles produiraient deux affirmations
+
+Ligne 255
+    s'effacent devant elle, sinon elles produiraient deux affirmations
+    code concerné : # contradictoires.
+
+Ligne 256
+    contradictoires.
+    code concerné : _regle_fermeture_et_refus,
+
+Ligne 271
+    ---------------------------------------------------------------------------
+    code concerné : # Assemblage
+
+Ligne 272
+    Assemblage
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 273
+    ---------------------------------------------------------------------------
+
+Ligne 287
+    Une regle defaillante ne doit pas priver l'utilisateur des autres.
+    code concerné : continue
+
+Ligne 315
+    Qui parle a qui, selon que les deux extremites sont locales ou non.
+    code concerné : if locale_a and not locale_b:
+
+Ligne 329
+    Le protocole et le port.
+    code concerné : suite = ""
+
+Ligne 339
+    L'etat.
+    code concerné : etat = communication.get("etat")
+
+Ligne 341
+    L'etat est deduit des drapeaux REELLEMENT observes. Quand aucun drapeau de
+    code concerné : # fermeture n'a ete vu, on ne peut pas affirmer que la connexion est encore
+
+Ligne 342
+    fermeture n'a ete vu, on ne peut pas affirmer que la connexion est encore
+    code concerné : # ouverte : la capture s'est peut-etre arretee avant. On enonce donc
+
+Ligne 343
+    ouverte : la capture s'est peut-etre arretee avant. On enonce donc
+    code concerné : # l'observation, sans conclure a la place de l'utilisateur.
+
+Ligne 344
+    l'observation, sans conclure a la place de l'utilisateur.
+    code concerné : fin = {
+
+Ligne 353
+    Le volume, quand il est connu.
+    code concerné : volume = ""
+
+Ligne 388
+    172.16.0.0 a 172.31.255.255
+    code concerné : if adresse.startswith("172."):
+
+Ligne 424
+    Les trois niveaux de CONSTATS. Un constat de niveau « observation »
+    code concerné : # (un débit calculé, par exemple) n'est ni une interprétation ni une
+
+Ligne 425
+    (un débit calculé, par exemple) n'est ni une interprétation ni une
+    code concerné : # hypothèse : ne pas le compter laissait un total faux à l'écran, la
+
+Ligne 426
+    hypothèse : ne pas le compter laissait un total faux à l'écran, la
+    code concerné : # somme des lignes ne correspondant pas au nombre de constats.
+
+Ligne 427
+    somme des lignes ne correspondant pas au nombre de constats.
+    code concerné : "observations": sum(1 for c in constats if c["niveau"] == OBSERVATION),
+

@@ -1,23 +1,4 @@
-"""
-Test fonctionnel de l'application.
 
-Ce script n'est pas un test unitaire : il interroge l'application reellement
-lancee, comme le ferait un navigateur. C'est ce qui permet d'affirmer que
-l'application fonctionne, et pas seulement que le code compile.
-
-Ce qu'il verifie, dans l'ordre :
-
-    1. le service repond et annonce son mode ;
-    2. le tableau de bord s'affiche, meme sans donnee ;
-    3. la page de capture propose les interfaces et les commandes ;
-    4. une capture demarre et du trafic reel apparait ;
-    5. le regroupement produit des communications coherentes ;
-    6. le detail d'une communication repond aux sept questions exigees ;
-    7. la capture s'arrete proprement ;
-    8. les cas d'erreur se comportent comme prevu.
-
-Usage :  python tools/tester_application.py
-"""
 
 import html
 import re
@@ -31,15 +12,8 @@ BASE = "http://127.0.0.1:5000"
 
 resultats = []
 
-
 def demander(chemin, methode="GET", donnees=None):
-    """
-    Envoie une requete et rend (code, contenu).
 
-    Le contenu est decode : les gabarits ecrivent « d&#39;ouvrir » la ou le texte
-    d'origine porte une apostrophe. Sans ce decodage, un controle sur une phrase
-    contenant une apostrophe echouerait alors que la page est correcte.
-    """
     corps = urllib.parse.urlencode(donnees).encode() if donnees else None
     requete = urllib.request.Request(BASE + chemin, data=corps, method=methode)
     if corps:
@@ -52,14 +26,12 @@ def demander(chemin, methode="GET", donnees=None):
     except Exception as e:
         return -1, f"{type(e).__name__} : {e}"
 
-
 def verifier(intitule, condition, detail=""):
     resultats.append((intitule, condition, detail))
     print(f"  [{'OK   ' if condition else 'ECHEC'}] {intitule}" + (f"  — {detail}" if detail else ""))
 
-
 def fabriquer_trafic():
-    """Provoque du trafic observable : DNS et requetes HTTP."""
+
     try:
         import socket
 
@@ -73,20 +45,17 @@ def fabriquer_trafic():
         except Exception:
             pass
 
-
 print("=" * 74)
 print("  TEST FONCTIONNEL DE L'APPLICATION")
 print("=" * 74)
 print()
 
-# -- 1. Le service ------------------------------------------------------------
 print("1. Le service repond")
 code, contenu = demander("/health")
 verifier("la sonde /health repond 200", code == 200, f"code {code}")
 verifier("elle annonce le mode et les paquets vus", "mode" in contenu and "paquets_vus" in contenu)
 print()
 
-# -- 2. Le tableau de bord ----------------------------------------------------
 print("2. Le tableau de bord")
 code, page = demander("/")
 verifier("la page / repond 200", code == 200, f"code {code}")
@@ -99,7 +68,6 @@ verifier("elle renvoie vers la page de capture quand elle est vide",
 verifier("le pied de page rappelle la limite du HTTPS", "n'est pas lisible" in page)
 print()
 
-# -- 3. La page de capture ----------------------------------------------------
 print("3. La page de capture")
 code, page = demander("/capture")
 verifier("la page /capture repond 200", code == 200, f"code {code}")
@@ -115,7 +83,6 @@ if m:
 verifier("une interface est proposee", bool(interface), interface)
 print()
 
-# -- 4. Capture et trafic -----------------------------------------------------
 print("4. Capture de trafic reel")
 code, page = demander("/capture/demarrer", "POST", {"interface": interface})
 verifier("le demarrage aboutit", code in (200, 302), f"code {code}")
@@ -134,7 +101,6 @@ verifier("les services probables sont identifies",
          any(s in page for s in ("HTTPS", "HTTP", "DNS")))
 print()
 
-# -- 5. Le regroupement en communications -------------------------------------
 print("5. Le regroupement en communications")
 code, page = demander("/")
 verifier("le tableau de bord affiche des chiffres", "communications observées" in page)
@@ -152,7 +118,6 @@ liens = re.findall(r'href="(/communication/[^"]+)"', page)
 verifier("au moins une communication est listee", len(liens) > 0, f"{len(liens)} lien(s)")
 print()
 
-# -- 6. Le detail d'une communication -----------------------------------------
 print("6. Le detail d'une communication")
 if not liens:
     verifier("une communication peut etre ouverte", False, "aucun lien a suivre")
@@ -179,7 +144,6 @@ else:
     verifier("l'etat de la communication est affiche", "etat-" in page)
 print()
 
-# -- 7. Arret -----------------------------------------------------------------
 print("7. Arret de la capture")
 code, page = demander("/capture/arreter", "POST", {})
 verifier("l'arret aboutit", code in (200, 302), f"code {code}")
@@ -189,7 +153,6 @@ time.sleep(2)
 verifier("le rafraichissement automatique est suspendu", 'http-equiv="refresh"' not in page)
 print()
 
-# -- 8. Cas d'erreur ----------------------------------------------------------
 print("8. Cas d'erreur")
 code, page = demander("/adresse-qui-nexiste-pas")
 verifier("une page inconnue repond 404", code == 404, f"code {code}")
@@ -200,9 +163,7 @@ verifier("une methode non autorisee repond 405", code == 405, f"code {code}")
 
 code, page = demander("/historique")
 verifier("la page /historique repond 200", code == 200, f"code {code}")
-# La page doit etre utile DANS LES DEUX CAS : soit elle explique ce qui manque,
-# soit elle affiche les captures enregistrees. Un controle qui n'accepterait
-# qu'un seul des deux etats signalerait un faux probleme.
+
 base_prete = "pas disponible" not in page
 if base_prete:
     verifier("la base repond : l'historique affiche son contenu",
@@ -215,7 +176,6 @@ else:
     verifier("la marche a suivre est indiquee",
              "SQL" in page and "SUPABASE" in page)
 
-# --- Les pages de la version 3 -------------------------------------------------
 code, page = demander("/protocoles")
 verifier("la page des protocoles repond", code == 200, f"code {code}")
 verifier("elle explique les drapeaux", "SYN" in page and "RST" in page)
@@ -228,9 +188,6 @@ verifier("il definit le vocabulaire", "Observation" in page and "Hypothèse" in 
 code, page = demander("/historique")
 verifier("l'historique repond", code == 200, f"code {code}")
 
-# On suit le premier lien vers une capture, puis vers une de ses communications.
-# La liste des captures ne mene pas directement a une communication : il faut
-# deux sauts, et l'oublier faisait echouer ce controle a tort.
 import re as _re
 capture = _re.search(r'href="(/historique/\d+)"', page)
 detail_capture = ""
@@ -261,7 +218,6 @@ verifier("une interface inexistante est refusee proprement",
          f"code {code}, message present : {refus}")
 print()
 
-# -- Synthese -----------------------------------------------------------------
 reussis = sum(1 for _, c, _ in resultats if c)
 total = len(resultats)
 print("=" * 74)

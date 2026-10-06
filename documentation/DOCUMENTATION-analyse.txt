@@ -1,0 +1,401 @@
+==============================================================================
+  EXPLICATIONS DU CODE — analyse
+==============================================================================
+
+==============================================================================
+  analyse\__init__.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  __init__.py
+------------------------------------------------------------------------------
+
+Etage 2 du projet : transformer un paquet brut en donnees nommees.
+
+
+
+==============================================================================
+  analyse\adresses.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  adresses.py
+------------------------------------------------------------------------------
+
+Formatage des adresses reseau.
+
+Ce module vit dans « analyse » et non dans « explication » pour une raison de
+dependance : le regroupement des paquets en communications a besoin de presenter
+une adresse, et le regroupement n'a aucune raison de dependre de l'etage qui
+redige les phrases. Une dependance posee a l'envers se paie plus tard.
+
+
+------------------------------------------------------------------------------
+  fonction  adresse_complete(adresse, port)
+------------------------------------------------------------------------------
+
+Presente une adresse, suivie de son port s'il est connu.
+
+    Les adresses IPv6 sont encadrees de crochets, et ce n'est pas une coquetterie.
+    Une adresse IPv6 contient deja des deux-points : ecrite « adresse:port », elle
+    devient « 2001:4860:4847:400:::443 » — illisible, et trompeuse, car rien ne
+    distingue plus l'adresse du port. La notation entre crochets est celle
+    employee partout ailleurs pour lever cette ambiguite.
+
+    Rend None quand l'adresse est inconnue : c'est a l'appelant de decider comment
+    presenter une absence.
+
+
+------------------------------------------------------------------------------
+  fonction  adresses_de(communication)
+------------------------------------------------------------------------------
+
+Rend les adresses d'une communication, quelle que soit sa forme.
+
+    Piege reel, rencontre en branchant l'enrichissement : une communication
+    VIVANTE porte ses extremites dans « premiere_extremite » et
+    « seconde_extremite », une communication ENREGISTREE les porte eclatees en
+    « ip_premiere » et « ip_seconde ». Lire le mauvais nom ne provoque aucune
+    erreur : on obtient simplement une liste vide, et une colonne qui reste
+    desesperement muette. Le defaut ne se voit qu'a l'ecran.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 28
+    adresse IPv6
+    code concerné : return f"[{adresse}]:{port}" if port is not None else f"[{adresse}]"
+
+
+
+==============================================================================
+  analyse\paquet.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  paquet.py
+------------------------------------------------------------------------------
+
+Analyse d'un paquet.
+
+Ce module fait une seule chose : prendre un paquet brut fourni par Scapy et le
+transformer en dictionnaire de champs nommes, faciles a lire et a afficher.
+
+C'est la frontiere importante du projet. En amont, on manipule des objets Scapy,
+que seuls les specialistes savent lire. En aval, tout le reste du programme ne
+manipule plus que des dictionnaires : des cles en francais, des valeurs simples.
+
+Une regle s'applique partout dans ce fichier : quand une information n'existe pas
+dans le paquet, on met None et on le dit. On n'invente jamais une valeur, et on ne
+met jamais une chaine vide qui laisserait croire que l'information a ete lue.
+
+
+------------------------------------------------------------------------------
+  fonction  protocole_ip(paquet)
+------------------------------------------------------------------------------
+
+Nom du protocole de la couche reseau, ou son numero s'il est inconnu.
+
+
+------------------------------------------------------------------------------
+  fonction  protocole_transport(paquet)
+------------------------------------------------------------------------------
+
+TCP, UDP, ICMP ou None.
+
+
+------------------------------------------------------------------------------
+  fonction  protocole_applicatif(paquet)
+------------------------------------------------------------------------------
+
+Essaie de deviner le service au-dessus du transport.
+
+    On reste prudent : quand on ne peut pas savoir, on rend None plutot que de
+    supposer. Un port 443 ne prouve pas que le contenu est du HTTPS, il indique
+    seulement que c'est tres probable.
+
+
+------------------------------------------------------------------------------
+  fonction  ports(paquet)
+------------------------------------------------------------------------------
+
+Ports source et destination, s'ils existent.
+
+
+------------------------------------------------------------------------------
+  fonction  drapeaux_tcp(paquet)
+------------------------------------------------------------------------------
+
+Drapeaux de l'en-tete TCP, sous forme lisible.
+
+    SYN   : demande d'ouverture de connexion
+    SYN-ACK : accord
+    ACK   : accuse de reception
+    FIN   : demande de fermeture
+    RST   : fermeture brutale, souvent un refus
+
+
+------------------------------------------------------------------------------
+  fonction  analyser(paquet, rang)
+------------------------------------------------------------------------------
+
+Transforme un paquet brut en dictionnaire de champs nommes.
+
+    'rang' est le numero d'ordre du paquet dans la capture : il sert a l'afficher
+    dans la liste et a le retrouver.
+
+
+------------------------------------------------------------------------------
+  fonction  service_probable(port)
+------------------------------------------------------------------------------
+
+Nom usuel d'un port, s'il est connu. Sinon None.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 20
+    Les protocoles de transport que nous savons reconnaitre, par leur numero tel
+    code concerné : # qu'il apparait dans l'en-tete IP.
+
+Ligne 21
+    qu'il apparait dans l'en-tete IP.
+    code concerné : NOMS_PROTOCOLES_IP = {
+
+Ligne 28
+    Ports dont le role est bien connu. Sert uniquement a proposer une lecture, pas
+    code concerné : # a affirmer ce que transporte reellement la communication : le contenu peut etre
+
+Ligne 29
+    a affirmer ce que transporte reellement la communication : le contenu peut etre
+    code concerné : # chiffre, et un service peut tres bien ecouter ailleurs.
+
+Ligne 30
+    chiffre, et un service peut tres bien ecouter ailleurs.
+    code concerné : PORTS_CONNUS = {
+
+Ligne 53
+    IPv6 utilise le champ « next header », au role equivalent.
+    code concerné : numero = paquet[IPv6].nh
+
+Ligne 94
+    Un paquet peut porter des donnees qui ne sont pas du texte : on
+    code concerné : # n'essaie pas de les decoder, on continue simplement.
+
+Ligne 95
+    n'essaie pas de les decoder, on continue simplement.
+    code concerné : return None
+
+Ligne 135
+    Adresses source et destination.
+    code concerné : #
+
+Ligne 136
+    
+    code concerné : # Trois cas a traiter, et non un seul :
+
+Ligne 137
+    Trois cas a traiter, et non un seul :
+    code concerné : #   - IPv4, le cas le plus courant ;
+
+Ligne 138
+    - IPv4, le cas le plus courant ;
+    code concerné : #   - IPv6, de plus en plus frequent — l'ignorer affichait « non disponible »
+
+Ligne 139
+    - IPv6, de plus en plus frequent — l'ignorer affichait « non disponible »
+    code concerné : #     sur une grande partie des paquets, alors que l'information etait bien
+
+Ligne 140
+    sur une grande partie des paquets, alors que l'information etait bien
+    code concerné : #     presente (c'est un defaut repere en regardant une capture d'ecran) ;
+
+Ligne 141
+    presente (c'est un defaut repere en regardant une capture d'ecran) ;
+    code concerné : #   - ARP, qui n'a pas d'adresse IP mais des adresses de reseau local.
+
+Ligne 142
+    - ARP, qui n'a pas d'adresse IP mais des adresses de reseau local.
+    code concerné : adresses = {}
+
+Ligne 152
+    Les paquets ARP n'ont pas d'adresses IP : ils servent a associer une
+    code concerné : # adresse IP a une adresse materielle sur le reseau local.
+
+Ligne 153
+    adresse IP a une adresse materielle sur le reseau local.
+    code concerné : adresses["source"] = paquet[ARP].psrc
+
+Ligne 159
+    Lecture du nom de domaine demande, quand c'est une requete DNS.
+    code concerné : domaine = None
+
+Ligne 167
+    Taille telle qu'elle circule reellement sur le reseau : on prend la
+    code concerné : # longueur totale du paquet, en-tetes comprises.
+
+Ligne 168
+    longueur totale du paquet, en-tetes comprises.
+    code concerné : try:
+
+Ligne 174
+    Horodatage : on garde la valeur brute (utile pour calculer des durees) et
+    code concerné : # on ajoute une forme lisible par un humain. Un nombre a treize chiffres
+
+Ligne 175
+    on ajoute une forme lisible par un humain. Un nombre a treize chiffres
+    code concerné : # n'apprend rien a personne — et rendre les donnees comprenables est
+
+Ligne 176
+    n'apprend rien a personne — et rendre les donnees comprenables est
+    code concerné : # precisement le but de ce projet.
+
+Ligne 177
+    precisement le but de ce projet.
+    code concerné : horodatage = float(paquet.time) if paquet.time else None
+
+Ligne 198
+    Lecture du port : on ne dit pas ce que transporte reellement la
+    code concerné : # communication, seulement le service habituellement associe a ce port.
+
+Ligne 199
+    communication, seulement le service habituellement associe a ce port.
+    code concerné : "service_probable": service_probable(port_destination),
+
+
+
+==============================================================================
+  analyse\protocoles.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  protocoles.py
+------------------------------------------------------------------------------
+
+Connaissance des protocoles.
+
+Ce module ne contient aucun traitement : seulement ce que nous savons des
+protocoles que nous prenons en charge. Il est séparé du code pour une raison
+simple : c'est de la documentation, et une autre personne doit pouvoir la lire,
+la corriger ou l'enrichir sans toucher à la logique du programme.
+
+Pour chaque protocole, on répond à trois questions, exactement celles que le
+cahier des charges demande :
+
+    - son role : a quoi sert ce protocole ;
+    - ce qu'on observe : ce que l'analyseur voit reellement ;
+    - ce que cela signifie : ce qu'on peut en deduire, et avec quel degre de
+      certitude.
+
+Une regle s'applique partout : ce qui est ecrit ici est une CONNAISSANCE
+GENERALE sur le protocole, jamais une affirmation sur la communication observee.
+L'observation, elle, se fait dans explication/faits.py.
+
+
+------------------------------------------------------------------------------
+  fonction  fiche_protocole(nom)
+------------------------------------------------------------------------------
+
+Rend la fiche d'un protocole, ou None s'il n'est pas documente.
+
+
+------------------------------------------------------------------------------
+  fonction  fiche_port(port)
+------------------------------------------------------------------------------
+
+Rend le nom et le commentaire associes a un port, ou (None, None).
+
+
+------------------------------------------------------------------------------
+  fonction  nom_du_port(port)
+------------------------------------------------------------------------------
+
+Nom usuel d'un port, ou None.
+
+
+------------------------------------------------------------------------------
+  fonction  lire_drapeaux(drapeaux_vus)
+------------------------------------------------------------------------------
+
+Traduit les drapeaux observes en liste de noms.
+
+    Deux formes sont acceptees, parce que les deux existent reellement dans les
+    donnees : la forme compacte (« AFIRS »), et la forme separee par des virgules.
+
+    Une lettre inconnue est conservee TELLE QUELLE plutot que passee sous
+    silence : si le programme ne sait pas la traduire, il le montre au lieu
+    d'inventer une signification.
+
+
+------------------------------------------------------------------------------
+  fonction  expliquer_drapeaux(drapeaux_vus)
+------------------------------------------------------------------------------
+
+Traduit les drapeaux observes en phrases comprehensibles.
+
+    Seuls les drapeaux REELLEMENT vus sont expliques. Un drapeau absent n'est
+    jamais commente : son absence est une information, pas un oubli.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 22
+    Les protocoles de transport et applicatifs reconnus.
+    code concerné : PROTOCOLES = {
+
+Ligne 154
+    Ports dont le role est etabli. Ce que l'on en dit reste une indication.
+    code concerné : PORTS = {
+
+Ligne 200
+    ---------------------------------------------------------------------------
+    code concerné : #  Les drapeaux TCP
+
+Ligne 201
+    Les drapeaux TCP
+    code concerné : # ---------------------------------------------------------------------------
+
+Ligne 202
+    ---------------------------------------------------------------------------
+    code concerné : #  Un drapeau est une marque dans l'en-tete d'un paquet, qui dit son role dans
+
+Ligne 203
+    Un drapeau est une marque dans l'en-tete d'un paquet, qui dit son role dans
+    code concerné : #  la conversation. Les reconnaitre permet de decrire l'etat d'une connexion
+
+Ligne 204
+    la conversation. Les reconnaitre permet de decrire l'etat d'une connexion
+    code concerné : #  sans avoir a en deviner le contenu.
+
+Ligne 205
+    sans avoir a en deviner le contenu.
+
+Ligne 218
+    Les drapeaux sont stockes sous une forme COMPACTE : une lettre par drapeau,
+    code concerné : #  dans l'ordre des bits de l'en-tete TCP. « AFIRS » signifie donc ACK, FIN, RST
+
+Ligne 219
+    dans l'ordre des bits de l'en-tete TCP. « AFIRS » signifie donc ACK, FIN, RST
+    code concerné : #  et SYN observes sur le meme echange. Sans cette correspondance, la colonne
+
+Ligne 220
+    et SYN observes sur le meme echange. Sans cette correspondance, la colonne
+    code concerné : #  « Drapeaux TCP observes » serait illisible pour quiconque n'a pas la table
+
+Ligne 221
+    « Drapeaux TCP observes » serait illisible pour quiconque n'a pas la table
+    code concerné : #  sous les yeux — et c'est exactement ce qu'un outil d'analyse doit eviter.
+
+Ligne 222
+    sous les yeux — et c'est exactement ce qu'un outil d'analyse doit eviter.
+

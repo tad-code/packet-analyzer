@@ -1,14 +1,4 @@
-"""
-Verifier le script SQL contre le PostgreSQL local.
 
-Objectif : ne pas faire decouvrir a l'utilisateur, dans l'editeur SQL de
-Supabase, une erreur que l'on pouvait detecter ici.
-
-On cree une base JETABLE, on y execute le script, on verifie que les tables
-existent et que la securite par ligne est bien activee, puis on supprime la
-base. Rien n'est laisse derriere, et la base du projet Mini SOC n'est pas
-touchee : on ne s'y connecte meme pas.
-"""
 
 import os
 import re
@@ -19,12 +9,6 @@ import psycopg
 RACINE = Path(__file__).resolve().parent.parent
 SCRIPT = RACINE / "sql" / "a-coller.sql"
 
-# ---------------------------------------------------------------------------
-# 1. Retrouver les parametres de connexion du PostgreSQL portable
-# ---------------------------------------------------------------------------
-# L'adresse du serveur de verification est fournie par l'environnement. On ne
-# code AUCUN chemin en dur : ce script doit pouvoir tourner sur une autre
-# machine, et un chemin personnel n'a rien a faire dans un depot.
 url = os.getenv("VERIF_PG_URL") or None
 if url:
     print("  adresse fournie par la variable VERIF_PG_URL")
@@ -40,11 +24,9 @@ if not url:
     print("  controle le resultat, puis supprime la base. Rien n'est laisse.")
     raise SystemExit(0)
 
-# On n'affiche JAMAIS le mot de passe : on ne montre que la forme.
 montrable = re.sub(r"://[^@]+@", "://***:***@", url)
 print(f"  adresse : {montrable}")
 
-# Base jetable, pour ne rien melanger avec les donnees existantes.
 url_serveur = url.rsplit("/", 1)[0] + "/postgres"
 nom_base = "verif_schema_reseau"
 
@@ -71,7 +53,6 @@ try:
 
             base.commit()
 
-            # --- Les tables existent-elles ? ---
             with base.cursor() as cur:
                 cur.execute("""
                     select tablename from pg_tables
@@ -81,7 +62,6 @@ try:
                 tables = [r[0] for r in cur.fetchall()]
             print(f"  tables creees : {tables}")
 
-            # --- La securite par ligne est-elle active ? ---
             with base.cursor() as cur:
                 cur.execute("""
                     select tablename, rowsecurity from pg_tables
@@ -94,7 +74,6 @@ try:
                 marque = "ACTIVEE" if actif else "*** DESACTIVEE ***"
                 print(f"      {nom:26s} {marque}")
 
-            # --- Les index ? ---
             with base.cursor() as cur:
                 cur.execute("""
                     select indexname from pg_indexes
@@ -104,7 +83,6 @@ try:
                 index = [r[0] for r in cur.fetchall()]
             print(f"  index crees : {index}")
 
-            # --- La contrainte de rattachement fonctionne-t-elle ? ---
             with base.cursor() as cur:
                 cur.execute("""
                     insert into reseau_analyses (interface, nb_paquets)
@@ -120,7 +98,6 @@ try:
                 nb = cur.fetchone()[0]
             print(f"  ecriture reelle    : 1 analyse + {nb} communication = OK")
 
-            # --- La suppression en cascade fonctionne-t-elle ? ---
             with base.cursor() as cur:
                 cur.execute("delete from reseau_analyses where id = %s", (analyse,))
                 cur.execute("select count(*) from reseau_communications")
@@ -128,7 +105,6 @@ try:
             print(f"  cascade            : {reste} communication restante apres "
                   f"suppression de l'analyse {'= OK' if reste == 0 else '= PROBLEME'}")
 
-            # --- La contrainte d'etat refuse-t-elle une valeur incoherente ? ---
             with base.cursor() as cur:
                 try:
                     cur.execute("insert into reseau_analyses (etat) values ('nimporte quoi')")
@@ -139,7 +115,6 @@ try:
 
             base.commit()
 
-    # --- Nettoyage ---
     with psycopg.connect(url_serveur, autocommit=True) as cx:
         with cx.cursor() as cur:
             cur.execute(f'drop database if exists "{nom_base}"')

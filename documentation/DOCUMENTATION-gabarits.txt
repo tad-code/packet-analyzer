@@ -1,0 +1,77 @@
+==============================================================================
+  EXPLICATIONS DES GABARITS ET DE LA FEUILLE DE STYLE
+==============================================================================
+
+------------------------------------------------------------------------------
+  templates\base.html
+------------------------------------------------------------------------------
+
+Ligne 9
+    Pendant une capture, la page se recharge toutes les 2 secondes pour
+    montrer les paquets au fur et a mesure. Le rechargement est suspendu
+    des que la capture s'arrete, pour ne pas deranger la lecture.
+
+------------------------------------------------------------------------------
+  templates\capture.html
+------------------------------------------------------------------------------
+
+Ligne 23
+    --- Ce que fait cet ecran ------------------------------------------------
+
+Ligne 38
+    --- Bandeaux d'information et d'erreur -----------------------------------
+
+Ligne 57
+    --- Commandes ------------------------------------------------------------
+
+Ligne 138
+    --- Liste des paquets ----------------------------------------------------
+
+Ligne 188
+    Exigence permanente du projet : aucun élément ne s'affiche sans explication.
+    Cette légende reste visible même sans paquet, pour que l'utilisateur
+    comprenne ce que l'outil montrera avant même de lancer une capture.
+
+------------------------------------------------------------------------------
+  static\style.css
+------------------------------------------------------------------------------
+
+Ligne 1
+    Feuille de style unique de l'application.
+    Ecrite une seule fois, elle habille toutes les pages : chaque nouveau gabarit
+    herite de ces regles sans rien redefinir.
+
+Ligne 31
+    Couleur des liens, valable partout. Sans cette regle, un lien ordinaire —
+    dans un paragraphe, un bandeau ou une legende — gardait le bleu par defaut
+    du navigateur, illisible sur fond sombre. Les regles plus precises (menu,
+    bouton-lien, tableaux) restent prioritaires.
+
+Ligne 129
+    --- Version 2 : tableau de bord, communications, etats -------------------
+
+Ligne 137
+    Etat d'une communication, deduit des drapeaux TCP reellement observes.
+
+Ligne 157
+    Tableau « question / reponse » de la vue detaillee.
+
+Ligne 171
+    Le lien de retour en haut de la vue detaillee doit rester lisible.
+
+Ligne 175
+    --- Version 2 : page Historique -----------------------------------------
+
+Ligne 183
+    --- Version 3 : l'explication -------------------------------------------
+
+Ligne 207
+    Les trois niveaux de certitude. La couleur dit ce que le mot dit deja :
+    l'observation est neutre, l'interpretation attire l'oeil, l'hypothese
+    avertit qu'il ne faut pas s'y fier.
+
+Ligne 243
+    --- Version 4 : les alertes ----------------------------------------------
+
+Ligne 279
+    --- Version 4 : le mode en ligne -----------------------------------------

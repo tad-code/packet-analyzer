@@ -385,6 +385,33 @@ environnement d'entraînement prévu à cet effet.
 
 ---
 
+## Où sont les explications
+
+**Le code ne contient aucun commentaire.** Les explications sont rassemblées dans
+le dossier `documentation/`, un fichier `.txt` par domaine :
+
+```
+documentation/
+    DOCUMENTATION-racine.txt           app.py, config.py
+    DOCUMENTATION-capture.txt          lire les paquets
+    DOCUMENTATION-analyse.txt          interpreter un paquet
+    DOCUMENTATION-communications.txt   regrouper en conversations
+    DOCUMENTATION-explication.txt      transformer en phrases
+    DOCUMENTATION-detection.txt        les regles d'alerte
+    DOCUMENTATION-enrichissement.txt   identifier les adresses
+    DOCUMENTATION-stockage.txt         lire et ecrire dans Supabase
+    DOCUMENTATION-webapp.txt           routes et rendu
+    DOCUMENTATION-api.txt              point d'entree serveur
+    DOCUMENTATION-sql.txt              creation des tables
+    DOCUMENTATION-tests.txt            ce que verifie chaque test
+    DOCUMENTATION-outils.txt           les scripts de verification
+    DOCUMENTATION-gabarits.txt         gabarits et feuille de style
+```
+
+Chaque fichier décrit, dans l'ordre : le rôle du module, puis celui de chaque
+fonction. Le document suit la structure du code, ce qui permet de le lire en
+parallèle.
+
 ## Vérifications
 
 | Script | Ce qu'il vérifie |

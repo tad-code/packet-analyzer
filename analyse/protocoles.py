@@ -1,25 +1,5 @@
-"""
-Connaissance des protocoles.
 
-Ce module ne contient aucun traitement : seulement ce que nous savons des
-protocoles que nous prenons en charge. Il est séparé du code pour une raison
-simple : c'est de la documentation, et une autre personne doit pouvoir la lire,
-la corriger ou l'enrichir sans toucher à la logique du programme.
 
-Pour chaque protocole, on répond à trois questions, exactement celles que le
-cahier des charges demande :
-
-    - son role : a quoi sert ce protocole ;
-    - ce qu'on observe : ce que l'analyseur voit reellement ;
-    - ce que cela signifie : ce qu'on peut en deduire, et avec quel degre de
-      certitude.
-
-Une regle s'applique partout : ce qui est ecrit ici est une CONNAISSANCE
-GENERALE sur le protocole, jamais une affirmation sur la communication observee.
-L'observation, elle, se fait dans explication/faits.py.
-"""
-
-# Les protocoles de transport et applicatifs reconnus.
 PROTOCOLES = {
     "TCP": {
         "nom": "TCP — Transmission Control Protocol",
@@ -150,8 +130,6 @@ PROTOCOLES = {
     },
 }
 
-
-# Ports dont le role est etabli. Ce que l'on en dit reste une indication.
 PORTS = {
     20: ("FTP (données)", "Transfert de fichiers, canal de données."),
     21: ("FTP (commandes)", "Transfert de fichiers, canal de commandes — non chiffré."),
@@ -177,32 +155,21 @@ PORTS = {
     8443: ("HTTPS alternatif", "Web chiffré sur un port secondaire."),
 }
 
-
 def fiche_protocole(nom):
-    """Rend la fiche d'un protocole, ou None s'il n'est pas documente."""
+
     if not nom:
         return None
     return PROTOCOLES.get(str(nom).upper())
 
-
 def fiche_port(port):
-    """Rend le nom et le commentaire associes a un port, ou (None, None)."""
+
     if port is None:
         return None, None
     return PORTS.get(int(port), (None, None))
 
-
 def nom_du_port(port):
-    """Nom usuel d'un port, ou None."""
+
     return fiche_port(port)[0]
-
-
-# ---------------------------------------------------------------------------
-#  Les drapeaux TCP
-# ---------------------------------------------------------------------------
-#  Un drapeau est une marque dans l'en-tete d'un paquet, qui dit son role dans
-#  la conversation. Les reconnaitre permet de decrire l'etat d'une connexion
-#  sans avoir a en deviner le contenu.
 
 DRAPEAUX = {
     "SYN": "Demande d'ouverture : une machine propose de commencer a dialoguer.",
@@ -214,30 +181,13 @@ DRAPEAUX = {
     "URG": "Donnée urgente, à traiter en priorité (rarement employé).",
 }
 
-
-#  Les drapeaux sont stockes sous une forme COMPACTE : une lettre par drapeau,
-#  dans l'ordre des bits de l'en-tete TCP. « AFIRS » signifie donc ACK, FIN, RST
-#  et SYN observes sur le meme echange. Sans cette correspondance, la colonne
-#  « Drapeaux TCP observes » serait illisible pour quiconque n'a pas la table
-#  sous les yeux — et c'est exactement ce qu'un outil d'analyse doit eviter.
-
 LETTRES_DRAPEAUX = {
     "S": "SYN", "A": "ACK", "F": "FIN", "R": "RST",
     "P": "PSH", "U": "URG", "E": "ECE", "C": "CWR", "N": "NS",
 }
 
-
 def lire_drapeaux(drapeaux_vus):
-    """
-    Traduit les drapeaux observes en liste de noms.
 
-    Deux formes sont acceptees, parce que les deux existent reellement dans les
-    donnees : la forme compacte (« AFIRS »), et la forme separee par des virgules.
-
-    Une lettre inconnue est conservee TELLE QUELLE plutot que passee sous
-    silence : si le programme ne sait pas la traduire, il le montre au lieu
-    d'inventer une signification.
-    """
     if not drapeaux_vus:
         return []
     texte = str(drapeaux_vus).strip()
@@ -255,14 +205,8 @@ def lire_drapeaux(drapeaux_vus):
             noms.append(nom)
     return noms
 
-
 def expliquer_drapeaux(drapeaux_vus):
-    """
-    Traduit les drapeaux observes en phrases comprehensibles.
 
-    Seuls les drapeaux REELLEMENT vus sont expliques. Un drapeau absent n'est
-    jamais commente : son absence est une information, pas un oubli.
-    """
     expliques = []
     for nom in lire_drapeaux(drapeaux_vus):
         sens = DRAPEAUX.get(nom, "Signification non documentee : le programme ne l'invente pas.")

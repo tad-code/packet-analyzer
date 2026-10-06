@@ -1,0 +1,301 @@
+==============================================================================
+  EXPLICATIONS DU CODE — racine
+==============================================================================
+
+==============================================================================
+  app.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  app.py
+------------------------------------------------------------------------------
+
+Point d'entree de l'application.
+
+Ce fichier fait quatre choses, et rien d'autre :
+
+    1. il cree l'application web ;
+    2. il y branche les routes ;
+    3. il definit ce qui s'affiche quand une erreur survient ;
+    4. il lance le serveur quand on execute le fichier directement.
+
+Toute la logique est ailleurs : ici, on ne fait que rassembler les morceaux.
+
+Pourquoi les pages d'erreur passent par le meme rendu que les autres pages : une
+page d'erreur sans menu ni habillage donne l'impression que l'application est
+casse. Le cahier des charges exige que l'utilisateur ne soit jamais confronte a
+un message incomprehensible.
+
+
+------------------------------------------------------------------------------
+  fonction  creer_application()
+------------------------------------------------------------------------------
+
+Construit et configure l'application web.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 29
+    --- Branchement des routes ---------------------------------------------
+    code concerné : from webapp.routes import routes
+
+Ligne 33
+    --- Pages d'erreur -------------------------------------------------------
+    code concerné : # Chaque cas est traite separement, avec un message en francais qui explique
+
+Ligne 34
+    Chaque cas est traite separement, avec un message en francais qui explique
+    code concerné : # ce qui s'est passe et ce que l'utilisateur peut faire.
+
+Ligne 35
+    ce qui s'est passe et ce que l'utilisateur peut faire.
+
+Ligne 72
+    Un filtre de gabarit, disponible dans toutes les pages. Sans lui, chaque
+    code concerné : # gabarit formaterait les adresses a sa maniere — et l'un d'eux oublierait
+
+Ligne 73
+    gabarit formaterait les adresses a sa maniere — et l'un d'eux oublierait
+    code concerné : # les crochets des adresses IPv6.
+
+Ligne 74
+    les crochets des adresses IPv6.
+    code concerné : from explication.faits import adresse_complete
+
+Ligne 78
+    Un filtre pour les volumes : les gabarits repetent sinon le meme calcul
+    code concerné : # dans chaque tableau, avec le risque d'oublier un cas.
+
+Ligne 79
+    dans chaque tableau, avec le risque d'oublier un cas.
+    code concerné : def volume(octets):
+
+Ligne 94
+    Instance utilisee par le serveur de developpement et par l'hebergeur.
+    code concerné : app = creer_application()
+
+
+
+==============================================================================
+  config.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  config.py
+------------------------------------------------------------------------------
+
+Configuration de l'application.
+
+Ce module est le seul endroit du projet qui lit les variables d'environnement.
+Tout le reste demande ses reglages ici. Cela evite qu'un secret se retrouve
+disperse dans le code, et cela rend le changement de mode evident.
+
+Deux modes :
+
+    - mode LOCAL  (CAPTURE_LOCALE=1) : l'application tourne sur la machine de
+      l'analyste. Elle peut capturer les paquets de la carte reseau.
+
+    - mode EN LIGNE : l'application tourne sur un serveur distant. Elle ne
+      capture rien — un serveur n'a acces a aucune carte reseau — et se contente
+      de lire les resultats enregistres dans Supabase.
+
+Pourquoi cette distinction des le depart : le module de capture a besoin du pilote
+Npcap et des droits administrateur. Sur un serveur, ces deux choses n'existent pas.
+Sans cette precaution, l'application refuserait purement et simplement de demarrer.
+
+
+------------------------------------------------------------------------------
+  fonction  _booleen(nom, defaut)
+------------------------------------------------------------------------------
+
+Lit une variable d'environnement qui vaut 1 ou 0.
+
+
+------------------------------------------------------------------------------
+  classe  Config
+------------------------------------------------------------------------------
+
+Reglages de l'application, lus une seule fois au demarrage.
+
+
+------------------------------------------------------------------------------
+  fonction  base_configuree(self)
+------------------------------------------------------------------------------
+
+La base est-elle REELLEMENT utilisable ?
+
+        On exige la cle secrete, et non simplement une cle quelconque. La
+        securite par ligne est fermee sur les tables du projet : la cle publique
+        ne peut donc ni lire ni ecrire. Repondre « oui » parce qu'une cle
+        publique est presente faisait annoncer a la sonde /health que la base
+        etait prete alors qu'aucune operation n'aurait abouti — exactement le
+        genre de mensonge qu'un outil d'analyse ne doit pas se permettre.
+
+
+------------------------------------------------------------------------------
+  fonction  resume(self)
+------------------------------------------------------------------------------
+
+Petit dictionnaire affiche en pied de page et sur la page /health.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 27
+    Le dossier qui contient ce fichier : la racine du projet.
+    code concerné : RACINE = Path(__file__).resolve().parent
+
+Ligne 30
+    Lecture du fichier .env s'il existe. Ce fichier n'est jamais versionne : il
+    code concerné : # contient les secrets et reste sur la machine.
+
+Ligne 31
+    contient les secrets et reste sur la machine.
+    code concerné : load_dotenv(RACINE / ".env")
+
+Ligne 44
+    --- Mode de fonctionnement -----------------------------------------
+    code concerné : # Par defaut, on est en local : c'est le cas normal sur la machine de
+
+Ligne 45
+    Par defaut, on est en local : c'est le cas normal sur la machine de
+    code concerné : # l'analyste. Sur l'hebergeur, CAPTURE_LOCALE vaudra 0.
+
+Ligne 46
+    l'analyste. Sur l'hebergeur, CAPTURE_LOCALE vaudra 0.
+    code concerné : self.capture_locale = _booleen("CAPTURE_LOCALE", "1")
+
+Ligne 49
+    --- Serveur web ------------------------------------------------------
+    code concerné : self.hote = os.getenv("HOST", "127.0.0.1")
+
+Ligne 54
+    --- Base de donnees Supabase ----------------------------------------
+    code concerné : # L'URL et la cle publique ne sont pas des secrets : elles peuvent
+
+Ligne 55
+    L'URL et la cle publique ne sont pas des secrets : elles peuvent
+    code concerné : # apparaitre dans un navigateur. La cle secrete, elle, ne doit JAMAIS
+
+Ligne 56
+    apparaitre dans un navigateur. La cle secrete, elle, ne doit JAMAIS
+    code concerné : # quitter le serveur.
+
+Ligne 57
+    quitter le serveur.
+    code concerné : self.supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
+
+Ligne 61
+    La cle a privileges eleves. Deux noms possibles, et c'est volontaire :
+    code concerné : #
+
+Ligne 62
+    
+    code concerné : #   - SUPABASE_SECRET_KEY      : la cle moderne, « sb_secret_... » ;
+
+Ligne 63
+    - SUPABASE_SECRET_KEY      : la cle moderne, « sb_secret_... » ;
+    code concerné : #   - SUPABASE_SERVICE_ROLE_KEY : la cle historique, encore valable.
+
+Ligne 64
+    - SUPABASE_SERVICE_ROLE_KEY : la cle historique, encore valable.
+    code concerné : #
+
+Ligne 65
+    
+    code concerné : # Supabase n'a pas supprime les anciennes cles : les deux systemes
+
+Ligne 66
+    Supabase n'a pas supprime les anciennes cles : les deux systemes
+    code concerné : # fonctionnent en parallele. Accepter les deux evite de bloquer
+
+Ligne 67
+    fonctionnent en parallele. Accepter les deux evite de bloquer
+    code concerné : # l'utilisateur sur un detail de nommage — d'autant que la cle moderne
+
+Ligne 68
+    l'utilisateur sur un detail de nommage — d'autant que la cle moderne
+    code concerné : # ne s'affiche qu'une fois, alors que l'ancienne reste consultable.
+
+Ligne 69
+    ne s'affiche qu'une fois, alors que l'ancienne reste consultable.
+    code concerné : self.supabase_cle_secrete = (
+
+Ligne 75
+    --- Capture ----------------------------------------------------------
+    code concerné : # Nombre de paquets conserves en memoire pour l'affichage. Au-dela, les
+
+Ligne 76
+    Nombre de paquets conserves en memoire pour l'affichage. Au-dela, les
+    code concerné : # plus anciens sont oublies : sans cette limite, une capture longue
+
+Ligne 77
+    plus anciens sont oublies : sans cette limite, une capture longue
+    code concerné : # finirait par saturer la memoire de la machine.
+
+Ligne 78
+    finirait par saturer la memoire de la machine.
+    code concerné : self.taille_tampon = int(os.getenv("TAILLE_TAMPON", "500"))
+
+Ligne 81
+    Interface ecoutee si l'utilisateur n'en choisit pas.
+    code concerné : self.interface_defaut = os.getenv("INTERFACE_DEFAUT", "")
+
+Ligne 84
+    --- Aides ---------------------------------------------------------------
+
+Ligne 108
+    Instance unique, importee par les autres modules.
+    code concerné : config = Config()
+
+
+
+==============================================================================
+  verifier_prerequis.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  verifier_prerequis.py
+------------------------------------------------------------------------------
+
+Verification des prerequis techniques du projet.
+
+Le projet repose entierement sur une chose : pouvoir capturer du trafic reel. Sur
+Windows, cela exige un pilote de capture (Npcap, ou WinPcap). Sans lui, aucune
+bibliotheque Python ne peut lire les paquets — ni Scapy, ni pyshark.
+
+On verifie donc, dans l'ordre :
+
+    1. la presence du pilote de capture et de ses bibliotheques ;
+    2. la presence de tshark, l'outil en ligne de commande de Wireshark, qui est une
+       autre voie possible ;
+    3. l'etat de l'authentification GitHub, pour le depot obligatoire ;
+    4. la version de Python et la presence de pip.
+
+Aucun de ces controles ne modifie quoi que ce soit sur la machine.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 30
+    Emplacements ou le pilote depose ses bibliotheques sur Windows.
+    code concerné : systeme = Path(os.environ.get("SystemRoot", r"C:\Windows"))
+
+Ligne 60
+    Dossier d'installation de Npcap
+    code concerné : for dossier in [Path(r"C:\Program Files\Npcap"), Path(r"C:\Program Files (x86)\Npcap")]:
+
+Ligne 121
+    Le compte courant est-il administrateur ?
+    code concerné : try:
+

@@ -1,19 +1,4 @@
-"""
-Captures d'ecran de l'interface, pour la documentation.
 
-Le script demarre une capture, fabrique du trafic, puis photographie chaque page.
-Il termine par l'arret de la capture.
-
-Pourquoi fabriquer du trafic : une capture d'ecran d'un tableau vide ne prouve
-rien. Les images doivent montrer des donnees reelles.
-
-Prerequis : playwright installe dans l'interpreteur qui execute ce script, et
-Google Chrome installe sur la machine.
-
-Deux precautions necessaires sur cette machine :
-    - channel="chrome"        : on emploie le Chrome installe ;
-    - args --no-proxy-server  : un proxy systeme fait echouer Chrome sur 127.0.0.1.
-"""
 
 import re
 import time
@@ -33,16 +18,8 @@ PAGES = [
     ("historique", "/historique"),
 ]
 
-
 def aller(page, adresse, essais=3, attente="domcontentloaded"):
-    """
-    Ouvre une page, avec reprise.
 
-    Le pilote de navigateur echoue parfois par « ERR_ABORTED » alors que le
-    serveur repond en moins d'une seconde. C'est une instabilite du pilote, pas
-    un defaut de l'application : sans reprise, une capture manquerait pour une
-    raison qui n'a rien a voir avec le projet.
-    """
     import time as _t
     derniere = None
     for _ in range(essais):
@@ -55,7 +32,6 @@ def aller(page, adresse, essais=3, attente="domcontentloaded"):
     print(f"      (echec apres {essais} essais : {str(derniere)[:60]})")
     return False
 
-
 def poster(chemin, donnees=None):
     corps = urllib.parse.urlencode(donnees or {}).encode()
     requete = urllib.request.Request(BASE + chemin, data=corps, method="POST")
@@ -66,7 +42,6 @@ def poster(chemin, donnees=None):
     except Exception as e:
         print(f"  [erreur] {chemin} : {e}")
         return -1
-
 
 def fabriquer_trafic():
     try:
@@ -82,8 +57,6 @@ def fabriquer_trafic():
         except Exception:
             pass
 
-
-# --- 1. Capture --------------------------------------------------------------
 print("  demarrage de la capture...")
 poster("/capture/demarrer", {"interface": "Wi-Fi"})
 time.sleep(2)
@@ -93,7 +66,6 @@ for _ in range(4):
     fabriquer_trafic()
     time.sleep(2)
 
-# --- 2. Photographies --------------------------------------------------------
 DOSSIER.mkdir(parents=True, exist_ok=True)
 
 with sync_playwright() as p:
@@ -104,9 +76,7 @@ with sync_playwright() as p:
     page = navigateur.new_page(viewport={"width": 1600, "height": 1100})
 
     for nom, chemin in PAGES:
-        # « networkidle » ne convient pas : pendant une capture, la page se
-        # recharge toutes les 2 secondes et le reseau n'est donc jamais au repos.
-        # L'attente du DOM suffit, et fonctionne dans les deux cas.
+
         if not aller(page, BASE + chemin):
             continue
         page.wait_for_timeout(1200)
@@ -114,12 +84,10 @@ with sync_playwright() as p:
         page.screenshot(path=str(sortie), full_page=True)
         print(f"  {sortie.name:22s} {sortie.stat().st_size} octets")
 
-    # --- 3. La vue detaillee d'une communication reelle ----------------------
     page.goto(BASE + "/communications", wait_until="domcontentloaded")
     lien = page.query_selector("tbody td a")
     if lien:
-        # L'attribut href est relatif (« /communication/... ») : le navigateur
-        # exige une adresse complete, on la reconstitue.
+
         adresse = lien.get_attribute("href")
         if adresse and adresse.startswith("/"):
             adresse = BASE + adresse

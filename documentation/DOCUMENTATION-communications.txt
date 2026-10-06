@@ -1,0 +1,274 @@
+==============================================================================
+  EXPLICATIONS DU CODE — communications
+==============================================================================
+
+==============================================================================
+  communications\__init__.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  __init__.py
+------------------------------------------------------------------------------
+
+Etage 3 du projet : regrouper les paquets en communications.
+
+
+
+==============================================================================
+  communications\regroupement.py
+==============================================================================
+
+
+------------------------------------------------------------------------------
+  module  regroupement.py
+------------------------------------------------------------------------------
+
+Regroupement des paquets en communications.
+
+C'est le coeur du projet. Un paquet isole ne dit pas grand-chose ; c'est la
+conversation qui a un sens. Ce module repond donc a la question :
+
+    « Qui parle a qui, sur quoi, pendant combien de temps, et avec quel volume ? »
+
+Trois choix de conception, et il faut pouvoir les expliquer :
+
+1. UNE FONCTION PURE, SANS ETAT.
+
+   `regrouper()` recoit une liste de paquets deja analyses et rend une liste de
+   communications. Elle ne lit aucun fichier, n'appelle aucun reseau, ne retient
+   rien entre deux appels. Consequences : elle est testable avec des paquets
+   fabriques a la main, et le resultat est reproductible.
+
+2. UNE CLE DE COMMUNICATION BIDIRECTIONNELLE.
+
+   Le quintuplet (adresse source, port source, adresse destination, port
+   destination, protocole) ne suffit pas tel quel : une reponse du serveur a un
+   ordre de champs inverse, et formerait donc une seconde communication. On
+   range les deux extremites dans un ordre fixe (tri alphabetique), si bien que
+   les deux sens de l'echange tombent dans la meme conversation.
+
+3. UNE DUREE D'INACTIVITE POUR CLORE.
+
+   Une communication TCP se termine par FIN ou RST, mais une communication UDP
+   ne se termine jamais explicitement. On considere donc qu'une communication
+   sans nouveau paquet depuis un certain temps est terminee.
+
+
+------------------------------------------------------------------------------
+  fonction  cle_communication(paquet)
+------------------------------------------------------------------------------
+
+Construit la cle de la communication a laquelle appartient un paquet.
+
+    Les deux extremites sont rangees dans un ordre fixe, afin que les paquets
+    allant et venant partagent la meme cle. Sans ce tri, une reponse serait vue
+    comme une communication separee.
+
+
+------------------------------------------------------------------------------
+  fonction  port_du_service(port_a, port_b)
+------------------------------------------------------------------------------
+
+Determine lequel des deux ports est celui du service.
+
+    Deux regles, dans cet ordre :
+
+        1. si l'un des ports est un port connu (443, 53, 22...), c'est lui le
+           service — c'est la regle la plus fiable ;
+        2. sinon, on prend le plus petit. Les clients choisissent generalement un
+           port eleve au hasard, les services ecoutent sur un port bas.
+
+    C'est une deduction, pas une certitude : elle est presentee comme telle dans
+    l'interface.
+
+
+------------------------------------------------------------------------------
+  fonction  etat_communication(drapeaux_vus, active)
+------------------------------------------------------------------------------
+
+Deduit l'etat de la communication a partir des drapeaux TCP observes.
+
+    Correspond aux etapes que le cahier des charges demande d'identifier :
+
+        - « ouverte »  : un SYN a ete vu, sans reponse pour l'instant ;
+        - « refusee »  : un RST a ete vu — le service a rejete la connexion ;
+        - « terminee » : un FIN a ete vu — la connexion s'est fermee proprement ;
+        - « en cours » : des echanges ont lieu, rien n'indique la fin ;
+        - « inactive » : plus rien depuis longtemps, sans fermeture explicite.
+
+
+------------------------------------------------------------------------------
+  fonction  _heure_lisible(horodatage)
+------------------------------------------------------------------------------
+
+Rend un horodatage sous une forme lisible, ou None.
+
+
+------------------------------------------------------------------------------
+  fonction  regrouper(paquets, delai_inactivite, maintenant)
+------------------------------------------------------------------------------
+
+Regroupe une liste de paquets analyses en communications.
+
+    'paquets'           : liste de dictionnaires produits par analyse.paquet
+    'delai_inactivite'  : duree de silence au-dela de laquelle une communication
+                          est consideree comme terminee
+    'maintenant'        : instant de reference, pour que le resultat soit
+                          reproductible dans les tests. Par defaut, on prend le
+                          dernier paquet vu.
+
+
+------------------------------------------------------------------------------
+  fonction  statistiques(communications)
+------------------------------------------------------------------------------
+
+Calcule les chiffres du tableau de bord a partir des communications.
+
+    Tout est compte a partir des communications, et non des paquets : c'est la
+    communication qui porte le sens, et cela evite de compter deux fois le meme
+    echange.
+
+
+------------------------------------------------------------------------------
+  fonction  repondre_questions(communication)
+------------------------------------------------------------------------------
+
+Repond aux sept questions que le cahier des charges demande de pouvoir
+    traiter pour une communication.
+
+    On rend des couples « question / reponse » deja formates : l'interface les
+    affiche tels quels, et il n'y a pas de phrase a reconstruire ailleurs.
+
+
+------------------------------------------------------------------------------
+  commentaires du code
+------------------------------------------------------------------------------
+
+Ligne 38
+    Duree, en secondes, apres laquelle une communication silencieuse est
+    code concerné : # consideree comme terminee. Une minute est un compromis raisonnable : assez
+
+Ligne 39
+    consideree comme terminee. Une minute est un compromis raisonnable : assez
+    code concerné : # longue pour ne pas couper une conversation qui marque une pause, assez courte
+
+Ligne 40
+    longue pour ne pas couper une conversation qui marque une pause, assez courte
+    code concerné : # pour que l'affichage reste juste.
+
+Ligne 41
+    pour que l'affichage reste juste.
+    code concerné : DELAI_INACTIVITE = 60.0
+
+Ligne 44
+    Drapeaux TCP et ce qu'ils indiquent sur l'etat de la connexion.
+    code concerné : DRAPEAUX_OUVERTURE = "S"
+
+Ligne 120
+    Un SYN sans FIN et sans RST : l'echange se poursuit.
+    code concerné : return "en cours"
+
+Ligne 152
+    Un paquet inexploitable ne doit pas faire echouer tout le
+    code concerné : # regroupement : on l'ignore.
+
+Ligne 153
+    regroupement : on l'ignore.
+    code concerné : continue
+
+Ligne 157
+    Premiere rencontre : on cree la communication.
+    code concerné : protocole = paquet.get("protocole_transport") or paquet.get("protocole_ip") or "inconnu"
+
+Ligne 173
+    Qui a parle en premier : utile pour savoir qui a pris
+    code concerné : # l'initiative de la communication.
+
+Ligne 174
+    l'initiative de la communication.
+    code concerné : "initiateur": paquet.get("source"),
+
+Ligne 188
+    --- Comptage ------------------------------------------------------
+    code concerné : communication["nb_paquets"] += 1
+
+Ligne 193
+    --- Bornes temporelles --------------------------------------------
+    code concerné : horodatage = paquet.get("horodatage")
+
+Ligne 201
+    --- Drapeaux observes ---------------------------------------------
+    code concerné : drapeaux = paquet.get("drapeaux")
+
+Ligne 207
+    --- Sens de circulation -------------------------------------------
+    code concerné : if paquet.get("source") == communication["premiere_extremite"]["ip"]:
+
+Ligne 213
+    --- Mise en forme finale ------------------------------------------------
+    code concerné : instant_reference = maintenant
+
+Ligne 227
+    La communication est-elle encore active ?
+    code concerné : #
+
+Ligne 228
+    
+    code concerné : # Deux conditions, et non une seule. Se fier uniquement au temps donnait
+
+Ligne 229
+    Deux conditions, et non une seule. Se fier uniquement au temps donnait
+    code concerné : # un resultat faux : une communication fermee par FIN ou rejetee par RST
+
+Ligne 230
+    un resultat faux : une communication fermee par FIN ou rejetee par RST
+    code concerné : # etait comptee comme « encore active » tant qu'elle etait recente. Or
+
+Ligne 231
+    etait comptee comme « encore active » tant qu'elle etait recente. Or
+    code concerné : # elle est bel et bien terminee — c'est meme ce que disent ses drapeaux.
+
+Ligne 232
+    elle est bel et bien terminee — c'est meme ce que disent ses drapeaux.
+    code concerné : fermee = (DRAPEAUX_FERMETURE in drapeaux_vus) or (DRAPEAUX_REFUS in drapeaux_vus)
+
+Ligne 245
+    non serialisable, on l'oublie
+
+Ligne 249
+    Les communications les plus recentes d'abord.
+    code concerné : resultat.sort(key=lambda c: c["fin"] or 0, reverse=True)
+
+Ligne 276
+    La machine qui a ouvert la communication.
+    code concerné : sources[c["initiateur"]] += c["nb_paquets"]
+
+Ligne 279
+    La destination est l'AUTRE extremite, celle qui n'a pas pris
+    code concerné : # l'initiative. Compter les deux extremaitait la meme machine dans
+
+Ligne 280
+    l'initiative. Compter les deux extremaitait la meme machine dans
+    code concerné : # les sources et dans les destinations : le tableau de bord
+
+Ligne 281
+    les sources et dans les destinations : le tableau de bord
+    code concerné : # presentait alors une adresse locale comme une destination.
+
+Ligne 282
+    presentait alors une adresse locale comme une destination.
+    code concerné : for extremite in (c["premiere_extremite"], c["seconde_extremite"]):
+
+Ligne 317
+    On passe par le formateur commun : c'est lui qui sait encadrer les
+    code concerné : # adresses IPv6, dont les deux-points se confondraient avec le separateur
+
+Ligne 318
+    adresses IPv6, dont les deux-points se confondraient avec le separateur
+    code concerné : # du port.
+
+Ligne 319
+    du port.
+    code concerné : rendu = adresse_complete(extremite["ip"], extremite["port"])
+
