@@ -1,45 +1,5 @@
 {
  "93.184.216.34": {
   "erreur": "adresse non attribuée"
- },
- "34.193.104.167": {
-  "pays": "United States",
-  "code_pays": "US",
-  "ville": "Ashburn",
-  "fournisseur": "Amazon.com, Inc.",
-  "organisation": "AWS EC2 (us-east-1)",
-  "reseau": "AS14618 Amazon.com, Inc."
- },
- "2001:42d8:3693:c000:88c:8045:ba4f:d100": {
-  "pays": "Ivory Coast",
-  "code_pays": "CI",
-  "ville": "Abidjan",
-  "fournisseur": "ORANGE COTE D'IVOIRE",
-  "organisation": "Orange Côte d'Ivoire",
-  "reseau": "AS29571 Orange Côte d'Ivoire"
- },
- "2a04:4e42::223": {
-  "pays": "Canada",
-  "code_pays": "CA",
-  "ville": "Montreal",
-  "fournisseur": "Fastly, Inc.",
-  "organisation": "Fastly 4e42",
-  "reseau": "AS54113 Fastly, Inc."
- },
- "2a02:ec80:600:ed1a::1": {
-  "pays": "United States",
-  "code_pays": "US",
-  "ville": "San Francisco",
-  "fournisseur": "Wikimedia Europe network",
-  "organisation": "Wikimedia Foundation, Inc",
-  "reseau": "AS14907 Wikimedia Foundation Inc."
- },
- "2605:bc80:3010:b00:0:deb:166:200": {
-  "pays": "United States",
-  "code_pays": "US",
-  "ville": "Corvallis",
-  "fournisseur": "University of Oregon",
-  "organisation": "University of Oregon",
-  "reseau": "AS3701 University of Oregon"
  }
 }
