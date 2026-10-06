@@ -20,3 +20,6 @@ captures/
 # Depots et fichiers temporaires
 *.log
 tmp/
+
+.vercel
+.env*

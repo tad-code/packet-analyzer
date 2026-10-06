@@ -1,5 +1,13 @@
 # Analyseur réseau
 
+**Application en ligne :** https://analyseur-reseau.vercel.app
+
+**Dépôt :** https://github.com/tad-code/packet-analyzer
+
+> L'application en ligne fonctionne en **lecture seule** : un serveur distant n'a
+> pas de carte réseau, il ne peut donc pas capturer. Il affiche les captures
+> enregistrées depuis votre machine, qui remontent par Supabase.
+
 Un outil qui lit le trafic réseau, le structure, et **explique en langage humain**
 ce qui se passe — au lieu d'afficher des lignes techniques illisibles.
 
