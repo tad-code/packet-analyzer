@@ -23,6 +23,9 @@ from webapp.rendu import rendre
 
 routes = Blueprint("routes", __name__)
 
+CONTACT_PUBLIC = "https://github.com/tad-code"
+MISE_A_JOUR_LEGAL = "13 octobre 2026"
+
 moteur = MoteurCapture(taille_tampon=config.taille_tampon)
 
 MESSAGES = {
@@ -457,6 +460,20 @@ def glossaire():
     return rendre("glossaire.html", "glossaire",
                   entrees=GLOSSAIRE,
                   capture_en_cours=moteur.en_cours())
+
+@routes.route("/confidentialite")
+def confidentialite():
+
+    return rendre("confidentialite.html", "confidentialite",
+                  contact=CONTACT_PUBLIC,
+                  mise_a_jour=MISE_A_JOUR_LEGAL)
+
+@routes.route("/mentions-legales")
+def mentions_legales():
+
+    return rendre("mentions-legales.html", "mentions-legales",
+                  contact=CONTACT_PUBLIC,
+                  mise_a_jour=MISE_A_JOUR_LEGAL)
 
 @routes.route("/health")
 def health():

@@ -883,3 +883,47 @@ Ligne 158
 Ligne 159
     ---------------------------------------------------------------------------
 
+
+
+------------------------------------------------------------------------------
+  module  test_entetes_et_pages_publiques.py
+------------------------------------------------------------------------------
+
+Ligne 12
+    La liste des pages qui doivent repondre sans compte. L'audit reprochait des
+    mentions legales introuvables : ce test les rend obligatoires.
+
+Ligne 63
+    Les deux pages legales, interrogees sans compte connecte. La lecture de la
+    base est piegee pour echouer : une page legale qui toucherait aux donnees
+    ferait tomber le test, au lieu de passer inapercu.
+
+Ligne 84
+    Le contenu utile est verifie mot par mot (Vercel, Supabase, le contact, la
+    suppression des donnees) : reformuler la page reste possible, la vider non.
+
+Ligne 111
+    Verifie que les entetes annonces par le dictionnaire arrivent bien sur une
+    reponse reelle, via le client de test Flask et non par le reseau.
+
+Ligne 122
+    Verrouille le coeur de la politique : frame-ancestors 'none' present,
+    unsafe-inline et unsafe-eval absents. Si quelqu'un affaiblit la politique
+    pour faire tenir un script, ce test tombe.
+
+Ligne 134
+    Les erreurs et /health portent aussi les entetes : une page d'erreur n'est
+    pas une porte de sortie.
+
+Ligne 142
+    Le garde-fou des gabarits : aucun script en ligne, aucun attribut style=,
+    aucun lien javascript:. C'est ce test qui permettra de conserver
+    style-src 'self' et script-src 'self' sans exception, quand quelqu'un
+    ajoutera une page.
+
+Ligne 155
+    Le rafraichissement automatique de la page Capture (meta refresh) survit a
+    la politique de contenu. Le controle est fait sur un rendu reel, pas sur le
+    fichier : si le bloc de rafraichissement disparait du gabarit, le test
+    tombe.
+

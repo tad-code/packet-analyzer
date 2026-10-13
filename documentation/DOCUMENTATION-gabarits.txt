@@ -74,4 +74,71 @@ Ligne 243
     --- Version 4 : les alertes ----------------------------------------------
 
 Ligne 279
-    --- Version 4 : le mode en ligne -----------------------------------------
+    --- Version 4 : le mode en ligne ------------------------------------------
+
+
+
+------------------------------------------------------------------------------
+  --- Version 4 : les pages legales, le pied de page et les styles en ligne ---
+------------------------------------------------------------------------------
+
+base.html, ligne 78
+    Deux liens ajoutes au pied de page, visibles par tous : Confidentialite et
+    Mentions legales. C'est ce que l'audit demandait, et cela evite qu'une page
+    legale existe sans etre trouvable.
+
+    code concerné : <a href="{{ url_for('routes.confidentialite') }}">Confidentialité</a>
+
+historique.html, ligne 23
+    L'attribut style= qui se trouvait sur ce titre est devenu la classe
+    titre-bloc. Raison de fond : une politique de contenu qui interdit les
+    styles en ligne est plus solide, mais elle ignore les attributs style=.
+    Deplacer ces deux regles dans la feuille de style a permis d'ecrire
+    style-src 'self' sans 'unsafe-inline' et sans rien changer au rendu.
+
+    code concerné : <h3 class="titre-bloc">Ce qu'il faut faire</h3>
+
+tableau_bord.html, ligne 177
+    Meme traitement pour ce paragraphe : style="margin-top:14px" devient la
+    classe apres-tableau. Le style.css porte la regle avec la specificite
+    necessaire pour continuer de l'emporter sur .carte p.
+
+    code concerné : <p class="petit apres-tableau">
+
+------------------------------------------------------------------------------
+  templates\confidentialite.html
+------------------------------------------------------------------------------
+
+Ligne 6
+    Page publique, dans le style des autres : des sections class="carte", une
+    liste de definitions dl.exemple, et les remarques en p.petit. Elle dit qui
+    edite le site, quelles donnees sont traitees, ou elles sont hebergees, et
+    comment demander leur suppression.
+
+Ligne 62
+    Le paragraphe sur les temoins reste factuel : le seul cookie pose par le
+    site est celui de la session, il ne sert a aucune mesure d'audience. Le
+    dire evite une affirmation trop large du genre « aucun cookie ».
+
+------------------------------------------------------------------------------
+  templates\mentions-legales.html
+------------------------------------------------------------------------------
+
+Ligne 6
+    Meme habillage. Cinq sections : editeur, hebergement (Vercel pour le site,
+    Supabase pour la base), propriete intellectuelle, contact, et l'emploi de
+    l'outil.
+
+Ligne 71
+    La phrase d'usage reprend la regle du projet : l'outil ne doit servir que
+    sur un reseau que l'utilisateur est autorise a observer.
+
+------------------------------------------------------------------------------
+  static\style.css
+------------------------------------------------------------------------------
+
+.titre-bloc et .apres-tableau
+    Les deux regles qui remplacent les attributs style= en ligne. Elles sont
+    ecrites avec la specificite suffisante (.carte h3.titre-bloc,
+    .carte p.petit.apres-tableau) pour que le rendu reste identique a celui des
+    attributs qu'elles remplacent.

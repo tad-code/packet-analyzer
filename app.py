@@ -10,6 +10,22 @@ from webapp.rendu import rendre
 
 ADRESSES_DE_CETTE_MACHINE = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
 
+ENTETES_DE_SECURITE = {
+    "Content-Security-Policy": (
+        "default-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; "
+        "frame-ancestors 'none'; img-src 'self' data:; style-src 'self'; "
+        "script-src 'self'; font-src 'self'; connect-src 'self'"
+    ),
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "X-Content-Type-Options": "nosniff",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "Permissions-Policy": (
+        "geolocation=(), camera=(), microphone=(), payment=(), usb=(), "
+        "magnetometer=(), gyroscope=(), interest-cohort=()"
+    ),
+}
+
 def adresse_reseau():
 
     import socket
@@ -51,6 +67,13 @@ def creer_application():
         if request.remote_addr in ADRESSES_DE_CETTE_MACHINE:
             session_utilisateur.ouvrir_compte_local()
         return None
+
+    @application.after_request
+    def poser_les_entetes_de_securite(reponse):
+
+        for nom, valeur in ENTETES_DE_SECURITE.items():
+            reponse.headers[nom] = valeur
+        return reponse
 
     @application.errorhandler(400)
     def demande_invalide(e):

@@ -74,7 +74,9 @@
         <p>
             Analyseur réseau — version {{ version }} ·
             Mode {{ mode }} ·
-            <a href="{{ url_for('routes.health') }}">état du service</a>
+            <a href="{{ url_for('routes.health') }}">état du service</a> ·
+            <a href="{{ url_for('routes.confidentialite') }}">Confidentialité</a> ·
+            <a href="{{ url_for('routes.mentions_legales') }}">Mentions légales</a>
         </p>
         <p class="petit">
             Chaque compte ne voit que ses propres captures : les données sont cloisonnées

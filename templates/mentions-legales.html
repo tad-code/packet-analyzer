@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block titre %}Mentions légales — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+<section class="carte">
+    <h2>Mentions légales</h2>
+    <p>
+        Les informations d'identification de ce site, regroupées sur une seule page.
+    </p>
+    <p class="petit">
+        Dernière mise à jour : {{ mise_a_jour }}.
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Éditeur</h2>
+    <p>
+        Projet personnel, édité par son auteur. L'identité publique et le contact passent
+        par le dépôt de code du projet :
+        <a href="{{ contact }}">{{ contact }}</a>.
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Hébergement</h2>
+    <dl class="exemple">
+        <dt>Site</dt>
+        <dd><strong>Vercel</strong> (hébergement et diffusion des pages).</dd>
+
+        <dt>Base de données</dt>
+        <dd><strong>Supabase</strong> (stockage des comptes et des captures enregistrées).</dd>
+    </dl>
+</section>
+
+<section class="carte">
+    <h2>Propriété intellectuelle</h2>
+    <p>
+        Le code source du projet et les textes de ces pages appartiennent à l'éditeur du
+        projet ; le code est publié sur le dépôt indiqué ci-dessus. Les noms de marques
+        cités (Vercel, Supabase, Npcap, Wireshark) restent la propriété de leurs titulaires
+        respectifs et ne sont employés ici que pour décrire l'outil.
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Contact</h2>
+    <p>
+        Toute question, demande d'accès ou suppression de données :
+        <a href="{{ contact }}">{{ contact }}</a>.
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Usage de l'outil</h2>
+    <p>
+        Cet outil ne doit être utilisé que sur un réseau que vous êtes autorisé à observer.
+        L'observation du trafic d'un réseau qui ne vous appartient pas, ou sur lequel vous
+        n'avez pas d'autorisation, engage la responsabilité de celui qui la pratique.
+    </p>
+</section>
+
+{% endblock %}

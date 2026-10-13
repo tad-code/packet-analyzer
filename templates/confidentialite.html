@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block titre %}Politique de confidentialité — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+<section class="carte">
+    <h2>Politique de confidentialité</h2>
+    <p>
+        Cette page décrit, sans détour, quelles données ce site traite, où elles sont
+        hébergées, et ce que vous pouvez demander. Elle est volontairement courte : rien
+        n'y est collecté à votre insu.
+    </p>
+    <p class="petit">
+        Dernière mise à jour : {{ mise_a_jour }}.
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Qui édite ce site</h2>
+    <p>
+        Un projet personnel, édité par son auteur. L'identité publique et le contact
+        passent par le dépôt de code du projet :
+        <a href="{{ contact }}">{{ contact }}</a>.
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Quelles données sont traitées</h2>
+    <dl class="exemple">
+        <dt>Votre adresse électronique</dt>
+        <dd>Elle sert à identifier votre compte et à vous connecter. Elle n'est ni vendue,
+            ni transmise à un tiers, ni utilisée pour vous adresser des messages non demandés.</dd>
+
+        <dt>Les captures et les communications que vous enregistrez</dt>
+        <dd>Elles sont produites par vous, depuis votre machine, quand vous lancez une capture.
+            Le contenu des communications chiffrées (HTTPS) n'est pas lisible : seules les
+            métadonnées observées sont conservées.</dd>
+
+        <dt>Ce qui n'est pas conservé</dt>
+        <dd>Les paquets bruts ne sont pas conservés : seules les communications enregistrées
+            le sont. Aucun traceur publicitaire, aucun outil de mesure d'audience, aucun
+            profil publicitaire.</dd>
+
+        <dt>Ce qui n'est jamais publié</dt>
+        <dd>Le fichier de configuration <span class="mono">.env</span> et les identifiants
+            restent sur votre machine : ils ne sont jamais envoyés ni publiés.</dd>
+    </dl>
+    <p class="petit">
+        Le seul témoin déposé dans votre navigateur est celui de votre session : il sert à
+        vous reconnaître pendant votre visite et n'alimente aucune mesure d'audience.
+        Chaque compte ne voit que ses propres captures.
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Où sont hébergées les données</h2>
+    <dl class="exemple">
+        <dt>Le site</dt>
+        <dd>Hébergé par <strong>Vercel</strong>.</dd>
+
+        <dt>La base de données</dt>
+        <dd>Hébergée par <strong>Supabase</strong>. C'est là que sont enregistrées les
+            captures et les communications, cloisonnées par compte.</dd>
+    </dl>
+</section>
+
+<section class="carte">
+    <h2>Vos droits</h2>
+    <p>
+        Vous pouvez demander la suppression de votre compte et de toutes les données qui y
+        sont rattachées, à tout moment, par le contact indiqué plus haut. La demande est
+        traitée sans condition et sans justification à fournir.
+    </p>
+</section>
+
+{% endblock %}

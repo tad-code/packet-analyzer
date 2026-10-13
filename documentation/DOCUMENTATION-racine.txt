@@ -80,6 +80,85 @@ Ligne 94
 
 
 
+------------------------------------------------------------------------------
+  --- Version 4 : les en-tetes de securite ------------------------------------
+------------------------------------------------------------------------------
+
+Ligne 13
+    Tous les en-tetes de securite vivent dans un seul dictionnaire, a un seul
+    endroit. Une page, une erreur ou une reponse JSON ne peut donc pas en
+    oublier un : le crochet after_request les pose sur toutes les reponses,
+    sans exception.
+
+    L'audit externe reprochait quatre manques : page integrable dans un cadre
+    (clickjacking), aucune politique de contenu, aucune Referrer-Policy,
+    aucune protection de navigateur. Ce bloc les traite d'un coup.
+
+    code concerné : ENTETES_DE_SECURITE = {
+
+Ligne 14
+    La politique de contenu n'autorise que ce que le site emploie vraiment :
+    ses propres pages, sa propre feuille de style, ses propres images. Aucun
+    domaine externe n'est admis : un script venu d'ailleurs ne peut donc pas
+    s'executer, et une modification du HTML ne suffit pas a en injecter un.
+
+    Le site n'embarque aujourd'hui aucune balise <script> : la politique
+    script-src 'self' ne casse donc rien. Les deux attributs style= qui
+    existaient dans historique.html et tableau_bord.html ont ete remplaces
+    par des classes de la feuille de style, precisement pour pouvoir ecrire
+    style-src 'self' sans 'unsafe-inline' : garder unsafe-inline aurait
+    ouvert la porte aux styles injectes.
+
+    frame-ancestors 'none' repond au clickjacking : aucun autre site ne peut
+    afficher ces pages dans un cadre. base-uri et form-action 'self' empechent
+    qu'un formulaire detourne envoie les donnees ailleurs. object-src 'none'
+    ferme les greffons.
+
+    code concerné : "Content-Security-Policy": (
+
+Ligne 16
+    X-Frame-Options double frame-ancestors : les navigateurs anciens ne
+    connaissent que celui-la.
+
+    code concerné : "X-Frame-Options": "DENY",
+
+Ligne 17
+    L'adresse complete de la page n'est transmise qu'aux pages du meme site ;
+    vers un autre site, seul le domaine part.
+
+    code concerné : "Referrer-Policy": "strict-origin-when-cross-origin",
+
+Ligne 18
+    Le navigateur ne devine plus le type d'un fichier : il suit ce que le
+    serveur declare.
+
+    code concerné : "X-Content-Type-Options": "nosniff",
+
+Ligne 19
+    Un an de HTTPS obligatoire, sous-domaines compris.
+
+    code concerné : "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+
+Ligne 20
+    Les fonctions du navigateur dont l'application ne se sert pas sont
+    fermees : position, camera, microphone, paiement, USB, capteurs.
+
+    code concerné : "Permissions-Policy": (
+
+Ligne 71
+    Le crochet s'applique a toutes les reponses, y compris les pages d'erreur
+    et /health. Les valeurs sont ecrites en dur dans le dictionnaire : elles
+    sont les memes en local et en ligne, ce qui evite qu'un deploiement
+    serve une politique differente de celle qui a ete testee.
+
+    Le rafraichissement automatique de la page Capture (meta refresh) n'est
+    pas concerne par la politique de contenu : il continue de fonctionner, et
+    un test le verifie.
+
+    code concerné : @application.after_request
+
+
+
 ==============================================================================
   config.py
 ==============================================================================

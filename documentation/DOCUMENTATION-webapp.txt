@@ -400,3 +400,40 @@ Ligne 468
     noqa: BLE001
     code concerné : print(f"  (enrichissement indisponible : {type(e).__name__})")
 
+
+
+------------------------------------------------------------------------------
+  --- Version 4 : les pages legales et le contact -----------------------------
+------------------------------------------------------------------------------
+
+Ligne 26
+    Le contact et l'identite publique du projet tiennent en une seule ligne :
+    c'est le seul endroit a modifier le jour ou le proprietaire veut mettre une
+    adresse dediee a la place. Les deux pages legales la recoivent en
+    parametre, elles ne la repetent pas.
+
+    Aucun nom de personne et aucun nom d'etablissement n'y figure : seule
+    l'adresse du depot public est citee.
+
+    code concerné : CONTACT_PUBLIC = "https://github.com/tad-code"
+
+Ligne 27
+    La date affichee en bas des deux pages legales, mise a jour a la main a
+    chaque modification de fond.
+
+    code concerné : MISE_A_JOUR_LEGAL = "13 octobre 2026"
+
+Ligne 464
+    /confidentialite est publique, comme /glossaire : aucune connexion n'est
+    demandee, aucun acces a la base n'est fait. La suite de tests le verrouille
+    en faisant echouer tout appel de lecture pendant ces pages.
+
+    code concerné : @routes.route("/confidentialite")
+
+Ligne 471
+    /mentions-legales suit exactement le meme chemin : editeur, hebergement,
+    propriete intellectuelle, contact, et le rappel que l'outil ne sert que sur
+    un reseau que l'on est autorise a observer.
+
+    code concerné : @routes.route("/mentions-legales")
+

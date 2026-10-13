@@ -365,6 +365,10 @@ input[type="email"]:focus, input[type="password"]:focus, input[type="text"]:focu
 .formulaire-compte label { display: block; margin-bottom: 6px; }
 .formulaire-compte input { width: 100%; }
 
+.titre-bloc { font-size: 16px; margin-top: 20px; }
+.carte h3.titre-bloc { font-size: 16px; margin-top: 20px; }
+.carte p.petit.apres-tableau { margin-top: 14px; }
+
 .etapes { margin: 8px 0 0; padding-left: 22px; color: var(--texte-doux); }
 .etapes li { margin-bottom: 9px; }
 .etapes strong { color: var(--texte); }
