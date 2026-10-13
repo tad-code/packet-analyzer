@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block titre %}Créer un compte — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+<section class="carte">
+    <h2>Créer un compte</h2>
+    <p>
+        Un compte donne un espace personnel : les captures que vous enregistrez depuis
+        votre machine y sont rattachées, et vous êtes le seul à les voir. Un autre compte
+        ne peut ni les lister, ni les ouvrir, même en connaissant leur numéro.
+    </p>
+
+    {% if erreur %}
+    <div class="bandeau alerte">
+        <p>{{ erreur }}</p>
+        {% if erreur_detail %}<p class="petit">{{ erreur_detail }}</p>{% endif %}
+    </div>
+    {% endif %}
+
+    <form class="formulaire-compte" method="post" action="{{ url_for('comptes.inscription') }}">
+        <div>
+            <label for="courriel">Courriel</label>
+            <input id="courriel" name="courriel" type="email" autocomplete="username"
+                   value="{{ courriel }}" required autofocus>
+        </div>
+        <div>
+            <label for="mot_de_passe">Mot de passe (huit caractères au minimum)</label>
+            <input id="mot_de_passe" name="mot_de_passe" type="password"
+                   autocomplete="new-password" minlength="8" required>
+        </div>
+        <div>
+            <label for="confirmation">Confirmer le mot de passe</label>
+            <input id="confirmation" name="confirmation" type="password"
+                   autocomplete="new-password" minlength="8" required>
+        </div>
+        <div>
+            <button class="principal" type="submit">Créer le compte</button>
+        </div>
+    </form>
+</section>
+
+<section class="carte">
+    <h3>Déjà inscrit ?</h3>
+    <p><a href="{{ url_for('comptes.connexion') }}">Se connecter</a>.</p>
+</section>
+
+{% endblock %}

@@ -1,7 +1,10 @@
 
 
-from flask import Flask
+from datetime import timedelta
 
+from flask import Flask, request
+
+from authentification import session as session_utilisateur
 from config import config
 from webapp.rendu import rendre
 
@@ -9,8 +12,31 @@ def creer_application():
 
     application = Flask(__name__)
 
+    application.secret_key = config.cle_session
+    application.config.update(
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE=config.cookie_securise,
+        PERMANENT_SESSION_LIFETIME=timedelta(days=14),
+    )
+
     from webapp.routes import routes
     application.register_blueprint(routes)
+
+    from webapp.routes_auth import comptes
+    application.register_blueprint(comptes)
+
+    @application.before_request
+    def compte_de_cette_machine():
+
+        chemin = request.path or ""
+        if chemin.startswith("/static") or chemin.startswith("/health"):
+            return None
+        if (request.endpoint or "").startswith("comptes."):
+            return None
+
+        session_utilisateur.ouvrir_compte_local()
+        return None
 
     @application.errorhandler(400)
     def demande_invalide(e):
@@ -18,6 +44,20 @@ def creer_application():
                       titre="Demande invalide",
                       explication="La demande envoyée n'a pas pu être comprise.",
                       detail="Vérifiez le formulaire et recommencez."), 400
+
+    @application.errorhandler(401)
+    def non_connecte(e):
+        return rendre("erreur.html", "erreur", code=401,
+                      titre="Connexion nécessaire",
+                      explication="Cette page demande un compte.",
+                      detail="Connectez-vous pour continuer."), 401
+
+    @application.errorhandler(403)
+    def acces_refuse(e):
+        return rendre("erreur.html", "erreur", code=403,
+                      titre="Accès refusé",
+                      explication="Cette donnée appartient à un autre compte.",
+                      detail="Chaque compte ne voit que ses propres captures."), 403
 
     @application.errorhandler(404)
     def page_introuvable(e):
@@ -70,5 +110,8 @@ if __name__ == "__main__":
     print("  Analyseur reseau")
     print(f"  mode : {'local (capture active)' if config.capture_locale else 'en ligne (lecture seule)'}")
     print(f"  adresse : http://{config.hote}:{config.port}")
+    print(f"  comptes : {'Supabase Auth' if config.authentification_prete() else 'non configures'}")
+    if config.compte_local_configure():
+        print(f"  capture attribuee au compte : {config.compte_local_courriel}")
     print()
     app.run(host=config.hote, port=config.port, debug=config.debug)

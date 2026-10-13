@@ -8,10 +8,10 @@
     {% if capture_en_cours %}<meta http-equiv="refresh" content="2">{% endif %}
 </head>
 <body>
-{% if lecture_seule %}
+{% if lecture_seule and connecte %}
 <div class="bandeau-lecture-seule">
-    Mode lecture seule — cette page montre la dernière capture enregistrée, et non
-    le trafic de cette machine. Un serveur distant n'a pas accès à une carte réseau :
+    Mode lecture seule — cette page montre les captures enregistrées par votre compte,
+    et non le trafic de cette machine. Un serveur distant n'a pas accès à une carte réseau :
     l'observation se fait sur votre ordinateur, la consultation peut se faire ici.
 </div>
 {% endif %}
@@ -23,14 +23,25 @@
             <p class="sous-titre">Observer, comprendre et expliquer le trafic réseau</p>
         </div>
         <div class="etat-mode">
-            <span class="pastille {{ 'vert' if capture_possible else 'gris' }}"></span>
-            Mode {{ mode }}
+            {% if connecte %}
+            <span class="compte-entete">
+                <span class="courriel">{{ compte }}</span>
+                <span class="pastille {{ 'vert' if capture_possible else 'gris' }}"></span>
+                <span>Mode {{ mode }}</span>
+                <form method="post" action="{{ url_for('comptes.deconnexion') }}">
+                    <button class="discret" type="submit">Se déconnecter</button>
+                </form>
+            </span>
+            {% else %}
+            <a class="bouton-lien" href="{{ url_for('comptes.connexion') }}">Se connecter</a>
+            {% endif %}
         </div>
     </div>
 </header>
 
 <nav>
     <div class="conteneur">
+        {% if connecte %}
         <a href="{{ url_for('routes.accueil') }}"
            class="{{ 'actif' if page == 'tableau' }}">Tableau de bord</a>
         <a href="{{ url_for('routes.communications') }}"
@@ -43,6 +54,10 @@
            class="{{ 'actif' if page == 'alertes' }}">Alertes</a>
         <a href="{{ url_for('routes.protocoles') }}"
            class="{{ 'actif' if page == 'protocoles' }}">Protocoles</a>
+        {% else %}
+        <a href="{{ url_for('routes.accueil') }}"
+           class="{{ 'actif' if page == 'accueil' }}">Accueil</a>
+        {% endif %}
         <a href="{{ url_for('routes.glossaire') }}"
            class="{{ 'actif' if page == 'glossaire' }}">Glossaire</a>
     </div>
@@ -60,6 +75,8 @@
             <a href="{{ url_for('routes.health') }}">état du service</a>
         </p>
         <p class="petit">
+            Chaque compte ne voit que ses propres captures : les données sont cloisonnées
+            par utilisateur, dans l'interface comme dans la base.
             Cet outil n'analyse que le trafic d'un réseau sur lequel vous êtes autorisé
             à travailler. Le contenu des communications chiffrées (HTTPS) n'est pas lisible :
             seules les métadonnées sont observées.

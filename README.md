@@ -11,6 +11,62 @@ site en ligne peut ensuite consulter.
 
 ---
 
+## 0. Confidentialité : chaque utilisateur ne voit que ses propres données
+
+**Le site en ligne n'est plus public.** Chaque capture enregistrée appartient au
+compte qui l'a produite.
+
+- un visiteur **sans compte** ne voit aucune donnée : `/historique`,
+  `/communications`, `/alertes`, `/protocoles` et `/capture` le renvoient vers la
+  page de connexion. Seuls l'accueil explicatif, `/glossaire` et `/health`
+  restent ouverts — ils n'exposent aucune capture ;
+- un **compte ne voit que ses captures** : la liste, les détails, les
+  communications et les alertes sont filtrés par compte ;
+- **l'adresse directe d'une capture d'un autre compte est refusée** : réponse
+  `403 Accès refusé`, sans aucun contenu ;
+- le cloisonnement est garanti **par la base**, pas seulement par l'affichage :
+  des politiques de sécurité par ligne (Row Level Security de Supabase) font que
+  la base refuse de servir une ligne qui n'appartient pas au compte connecté
+  (voir `sql/cloisonnement.sql`).
+
+### Compte de démonstration — à utiliser pour visiter l'application
+
+| | |
+|---|---|
+| Adresse | <https://analyseur-reseau.vercel.app/connexion> |
+| Courriel | `demonstration@example.com` |
+| Mot de passe | `Demonstration-2026!` |
+
+Ce compte est **public et fait pour la démonstration** : il porte les captures
+déjà enregistrées (n° 5, 6, 15, 16, 17), afin qu'un correcteur puisse se
+connecter et constater que l'application fonctionne. Les mêmes identifiants sont
+rappelés sur la page d'accueil du site.
+
+> Ce compte ne voit **pas** les captures des autres comptes. Une capture produite
+> depuis une autre machine, avec un autre compte, ne lui apparaît nulle part.
+> Inversement, ce compte ne verrait pas la capture n° 17 s'il ne la possédait pas :
+> c'est le même mécanisme pour tout le monde.
+
+### Créer son propre compte
+
+<https://analyseur-reseau.vercel.app/inscription> : le compte démarre vide, et les
+captures qu'il enregistre depuis sa machine (mode local) lui sont rattachées.
+
+### Preuve du cloisonnement, en une commande
+
+```bash
+python tools/prover_cloisonnement.py https://analyseur-reseau.vercel.app
+```
+
+Le script interroge d'abord **la base directement** (clé publique + jeton de
+chaque compte), puis **le site en ligne** (connexion réelle, page par page), et
+compte les écarts. Résultat relevé le 13 octobre 2026 : **40 contrôles, 0 échec**.
+
+Les identifiants du second compte de test sont dans
+`tools/prover_cloisonnement.py` (`test-cloisonnement@example.com`).
+
+---
+
 ## 1. À lire avant de tester : pourquoi la capture est locale
 
 **Ce n'est pas un bug si le site en ligne affiche `paquets_vus: 0`. C'est l'architecture.**
@@ -35,10 +91,10 @@ site en ligne peut ensuite consulter.
   locale écrit dans la base (API REST Supabase) la capture, ses communications, leurs
   explications et les alertes produites. La base est le seul point de rencontre entre
   les deux modes.
-- **Ce que montre le site en ligne.** Il lit Supabase et affiche l'historique des
-  captures enregistrées : compteurs, communications, explications, alertes. Il ne
-  capture rien — son bandeau le dit : « Mode lecture seule — cette page montre la
-  dernière capture enregistrée, et non le trafic de cette machine. »
+- **Ce que montre le site en ligne.** Il lit Supabase et affiche **les captures du
+  compte connecté** : compteurs, communications, explications, alertes. Il ne
+  capture rien — son bandeau le dit : « Mode lecture seule — cette page montre les
+  captures enregistrées par votre compte, et non le trafic de cette machine. »
 
 Conclusion à retenir : `/health` du site répond `{"capture_possible": false,
 "paquets_vus": 0, "mode": "en ligne", "etat": "ok"}`. C'est le comportement attendu
@@ -52,10 +108,12 @@ d'une instance en ligne, pas une panne.
 
 <https://analyseur-reseau.vercel.app>
 
-### La preuve : la page `/historique`
+### La preuve : la page `/historique` (compte de démonstration)
 
-<https://analyseur-reseau.vercel.app/historique> liste les captures **réellement
-enregistrées en base**. Ligne la plus récente, lue le 13 octobre 2026 :
+Connectez-vous d'abord avec le compte de démonstration (section 0), puis ouvrez
+<https://analyseur-reseau.vercel.app/historique> : la page liste les captures
+**réellement enregistrées en base pour ce compte**. Ligne la plus récente, lue le
+13 octobre 2026 :
 
 ```
 17 | 2026-10-13 10:36:19 | Wi-Fi | 500 | 13 | 110.7 Ko | terminee
@@ -83,19 +141,20 @@ Depuis cette page on peut aller plus loin sans rien installer :
 python -m pytest tests/ -q
 ```
 
-**Résultat relevé le 13 octobre 2026 : `105 passed`.**
+**Résultat relevé le 13 octobre 2026 : `128 passed`.**
 
-Les 105 tests ont été comptés un par un (collecte + exécution) et se répartissent
+Les 128 tests ont été comptés un par un (collecte + exécution) et se répartissent
 ainsi :
 
 | Fichier | Tests | Ce qui est couvert |
 |---|---|---|
 | `tests/test_regroupement.py` | 24 | les paquets d'une même conversation forment une seule communication ; comptages, état déduit des drapeaux, fin par inactivité, cas incomplets |
 | `tests/test_explication.py` | 36 | la production des phrases : un fait observé n'est jamais présenté comme une déduction, une donnée manquante est annoncée |
+| `tests/test_cloisonnement.py` | 23 | **le cloisonnement** : une page de données sans compte renvoie vers la connexion, la lecture se fait au nom du compte connecté (jamais avec la clé de service), la capture d'un autre compte répond 403, la capture est enregistrée avec son propriétaire, et le jeton de session est rafraîchi ou la session fermée |
 | `tests/test_detection.py` | 17 | les règles d'alerte se déclenchent **et ne se déclenchent pas à tort** |
 | `tests/test_stockage.py` | 15 | la traduction vers Supabase, y compris les réponses en erreur |
 | `tests/test_enrichissement.py` | 13 | l'identification des adresses, les lots, le cache, les pannes |
-| **Total** | **105** | |
+| **Total** | **128** | |
 
 Ces tests ne capturent aucun paquet et ne touchent à aucun réseau ni à aucune base :
 ils fabriquent des paquets à la main. Ils s'exécutent donc partout, en moins d'une
@@ -109,6 +168,8 @@ le projet :
 | Script | Ce qu'il vérifie |
 |---|---|
 | `tools/tester_application.py` | contrôles fonctionnels sur les pages (l'application doit tourner sur 127.0.0.1:5000) |
+| `tools/prover_cloisonnement.py` | **preuve du cloisonnement** : ce que voit chaque compte, dans la base puis sur le site ; argument facultatif = adresse à tester |
+| `tools/mettre_en_place_comptes.py` | mise en place : politiques de sécurité par ligne, comptes, attribution des captures déjà enregistrées |
 | `tools/tester_bout_en_bout.py` | capture → enregistrement → historique, puis nettoyage ; `GARDER=1` conserve la capture |
 | `tools/verifier_ecriture_supabase.py` | écriture, relecture et suppression réelle en base |
 | `tools/verifier_capture.py` | que des paquets réels sont bien interceptés (Npcap + droits admin) |
@@ -151,6 +212,20 @@ arrêter l'analyseur.
 VMware, Hyper-V, Wi-Fi Direct — ne transportent aucun trafic réel), cliquer sur
 **Démarrer**, produire du trafic (ouvrir une page web), puis **Arrêter** pour figer
 l'affichage.
+
+**À quel compte la capture appartient-elle ?** L'instance locale connaît le compte
+de cette machine par deux variables du fichier `.env` :
+
+```
+ANALYSEUR_COMPTE_COURRIEL=analyste@example.com
+ANALYSEUR_COMPTE_MOT_DE_PASSE=…
+```
+
+Elle s'y connecte automatiquement au démarrage, et **chaque capture est enregistrée
+au nom de ce compte** — pas d'un compte unique partagé par toutes les installations.
+Si vous préférez choisir vous-même, laissez ces deux variables vides : la page
+`/connexion` sert alors de porte d'entrée, et la capture appartient au compte avec
+lequel vous vous êtes connecté.
 
 ---
 
@@ -256,36 +331,44 @@ Versions exactes dans `requirements.txt`.
 ├── detection/              les regles d'alerte
 ├── enrichissement/         identification des adresses distantes
 ├── explication/            production des phrases (+ adaptateur.py)
+├── authentification/       service.py (comptes Supabase), session.py (session Flask)
 ├── stockage/               supabase.py — lire et ecrire (API REST)
-├── sql/                    schema.sql, a-coller.sql (creation des tables)
-├── webapp/                 routes.py, rendu.py
+├── sql/                    schema.sql, a-coller.sql (creation des tables),
+│                           cloisonnement.sql (proprietaire + politiques RLS)
+├── webapp/                 routes.py, routes_auth.py, rendu.py
 ├── templates/              gabarits HTML
 ├── static/style.css        feuille de style unique
 ├── api/index.py            point d'entree pour l'hebergeur
 ├── tools/                  scripts de verification et de diagnostic
-├── tests/                  tests unitaires (105)
+├── tests/                  tests unitaires (128)
 └── documentation/          explications du code, un .txt par domaine
 ```
 
 ### Routes exposées
 
-| Route | Méthode | Rôle |
-|---|---|---|
-| `/` | GET | tableau de bord : chiffres essentiels et dernières communications |
-| `/communications` | GET | liste des communications observées |
-| `/communication/<clé>` | GET | détail d'une communication |
-| `/capture` | GET | choisir une carte réseau, démarrer, arrêter |
-| `/capture/demarrer` | POST | démarrer une capture sur l'interface choisie |
-| `/capture/arreter` | POST | arrêter la capture |
-| `/capture/vider` | POST | vider la liste des paquets conservés |
-| `/capture/enregistrer` | POST | enregistrer la capture et ses communications |
-| `/historique` | GET | captures enregistrées dans Supabase |
-| `/historique/<id>` | GET | détail d'une capture enregistrée |
-| `/historique/<id>/communication/<clé>` | GET | détail d'une communication enregistrée |
-| `/alertes` | GET | alertes produites par les règles |
-| `/protocoles` | GET | ce que le programme sait des protocoles et des ports |
-| `/glossaire` | GET | définition du vocabulaire employé |
-| `/health` | GET | état du service, en JSON |
+« Compte » veut dire qu'un visiteur sans compte est renvoyé vers la page de
+connexion : aucune de ces pages ne sert quoi que ce soit sans identité.
+
+| Route | Méthode | Rôle | Compte |
+|---|---|---|---|
+| `/` | GET | accueil explicatif (sans compte) ou tableau de bord du compte | non |
+| `/connexion` | GET, POST | se connecter | non |
+| `/inscription` | GET, POST | créer un compte | non |
+| `/deconnexion` | POST | fermer la session | oui |
+| `/communications` | GET | liste des communications observées | oui |
+| `/communication/<clé>` | GET | détail d'une communication | oui |
+| `/capture` | GET | choisir une carte réseau, démarrer, arrêter | oui |
+| `/capture/demarrer` | POST | démarrer une capture sur l'interface choisie | oui |
+| `/capture/arreter` | POST | arrêter la capture | oui |
+| `/capture/vider` | POST | vider la liste des paquets conservés | oui |
+| `/capture/enregistrer` | POST | enregistrer la capture, rattachée au compte connecté | oui |
+| `/historique` | GET | captures enregistrées par ce compte | oui |
+| `/historique/<id>` | GET | détail d'une capture de ce compte (403 sinon) | oui |
+| `/historique/<id>/communication/<clé>` | GET | détail d'une communication enregistrée | oui |
+| `/alertes` | GET | alertes produites par les règles | oui |
+| `/protocoles` | GET | ce que le programme sait des protocoles et des ports | oui |
+| `/glossaire` | GET | définition du vocabulaire employé | non |
+| `/health` | GET | état du service, en JSON | non |
 
 `/protocoles` et `/glossaire` existent pour une raison : **rien dans l'application ne
 doit reposer sur une connaissance cachée**. Ce que le programme affirme, l'utilisateur
@@ -340,6 +423,21 @@ Mise en place, une seule fois :
    commentée, qui justifie chaque table, est dans `sql/schema.sql`.
 4. **Vérifier.** `python tools/verifier_ecriture_supabase.py` — écrit, relit, supprime,
    et contrôle l'effacement en cascade. Les données d'essai sont retirées.
+5. **Cloisonner les données.** SQL Editor → coller `sql/cloisonnement.sql` → **Run**
+   (`tools/mettre_en_place_comptes.py` le fait aussi par l'API Management si
+   `SUPABASE_ACCESS_TOKEN` est renseignée). Ce script ajoute la colonne
+   `proprietaire_id`, active les politiques de sécurité par ligne et attribue les
+   captures déjà enregistrées au compte de démonstration.
+
+### Deux clés, deux rôles
+
+| Clé | Qui l'utilise | Ce qu'elle peut |
+|---|---|---|
+| **publique** (`SUPABASE_ANON_KEY`) + le jeton du compte connecté | l'interface web, pour lire | seulement les lignes du compte connecté : la base applique les politiques de sécurité par ligne |
+| **secrete** (`SUPABASE_SECRET_KEY`) | la capture locale, pour écrire | tout ; réservée à l'enregistrement depuis la machine qui capture et aux outils de mise en place |
+
+Aucune page de données ne lit avec la clé secrète : la lecture se fait toujours au
+nom du compte connecté. C'est ce que vérifie `tests/test_cloisonnement.py`.
 
 À savoir : le plan gratuit **met un projet en pause après sept jours sans activité**,
 et le domaine cesse alors de répondre ; `python tools/etat_supabase.py` indique l'état.
@@ -367,6 +465,11 @@ demarrer-analyseur.bat
 | Aucune interface détectée | bandeau explicatif, capture impossible |
 | Aucun paquet capturé | bandeau invitant à produire du trafic |
 | Page inconnue | page 404 avec menu et habillage conservés |
+| Donnée demandée sans compte | renvoi vers `/connexion`, avec retour à la page demandée après connexion |
+| Capture appartenant à un autre compte | page **403 Accès refusé**, sans aucun contenu de la capture |
+| Capture inexistante ou non attribuée | page 404 « Aucune capture ne vous est accessible sous ce numéro » |
+| Courriel ou mot de passe erroné | « Courriel ou mot de passe incorrect. » — le détail technique reste en petit |
+| Session expirée | renvoi vers `/connexion` avec un message explicite |
 | Mauvaise méthode HTTP | page 405 explicative |
 | Erreur interne | page 500 ; l'application reste utilisable |
 
@@ -413,6 +516,7 @@ documentation/
     DOCUMENTATION-analyse.txt          interpreter un paquet
     DOCUMENTATION-communications.txt   regrouper en conversations
     DOCUMENTATION-explication.txt      transformer en phrases
+    DOCUMENTATION-authentification.txt comptes et cloisonnement des donnees
     DOCUMENTATION-detection.txt        les regles d'alerte
     DOCUMENTATION-enrichissement.txt   identifier les adresses
     DOCUMENTATION-stockage.txt         lire et ecrire dans Supabase

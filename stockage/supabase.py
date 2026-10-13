@@ -31,11 +31,24 @@ def disponible():
                        "SUPABASE_SECRET_KEY (ou SUPABASE_SERVICE_ROLE_KEY).")
     return True, "Base configurée."
 
-def _entetes(representation=False):
+def disponible_utilisateur():
+
+    if not config.supabase_url:
+        return False, "L'adresse du projet Supabase n'est pas renseignée."
+    if not config.supabase_cle_publique:
+        return False, "La clé publique (SUPABASE_ANON_KEY) n'est pas renseignée."
+    return True, "Lecture au nom du compte connecté possible."
+
+def _entetes(representation=False, jeton=None):
+
+    if jeton:
+        cle, autorisation = config.supabase_cle_publique or config.supabase_cle_secrete, jeton
+    else:
+        cle, autorisation = _cle(), _cle()
 
     entetes = {
-        "apikey": _cle(),
-        "Authorization": f"Bearer {_cle()}",
+        "apikey": cle,
+        "Authorization": f"Bearer {autorisation}",
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
@@ -107,7 +120,7 @@ def _traduire_erreur(reponse, table):
         statut=code,
     )
 
-def _appeler(methode, table, donnees=None, filtre="", representation=False):
+def _appeler(methode, table, donnees=None, filtre="", representation=False, jeton=None):
 
     if not config.supabase_url:
         raise ErreurBase("L'adresse Supabase n'est pas renseignée.",
@@ -117,7 +130,7 @@ def _appeler(methode, table, donnees=None, filtre="", representation=False):
         reponse = requests.request(
             methode,
             _adresse(table, filtre),
-            headers=_entetes(representation),
+            headers=_entetes(representation, jeton),
             json=donnees,
             timeout=DELAI,
         )
@@ -143,13 +156,13 @@ def _appeler(methode, table, donnees=None, filtre="", representation=False):
                          kind="reponse",
                          detail=reponse.text[:200])
 
-def inserer(table, donnees):
+def inserer(table, donnees, jeton=None):
 
     if isinstance(donnees, dict):
         donnees = [donnees]
-    return _appeler("POST", table, donnees=donnees, representation=True)
+    return _appeler("POST", table, donnees=donnees, representation=True, jeton=jeton)
 
-def lire(table, filtre="", limite=None, ordre=None):
+def lire(table, filtre="", limite=None, ordre=None, jeton=None):
 
     morceaux = []
     if filtre:
@@ -158,14 +171,14 @@ def lire(table, filtre="", limite=None, ordre=None):
         morceaux.append(f"order={ordre}")
     if limite:
         morceaux.append(f"limit={limite}")
-    return _appeler("GET", table, filtre="&".join(morceaux)) or []
+    return _appeler("GET", table, filtre="&".join(morceaux), jeton=jeton) or []
 
-def compter(table, filtre=""):
+def compter(table, filtre="", jeton=None):
 
     if not config.supabase_url:
         raise ErreurBase("L'adresse Supabase n'est pas renseignée.",
                          kind="non_configuree")
-    entetes = _entetes()
+    entetes = _entetes(jeton=jeton)
     entetes["Prefer"] = "count=exact"
     entetes["Range"] = "0-0"
     try:
@@ -186,6 +199,15 @@ def compter(table, filtre=""):
         except ValueError:
             pass
     return len(reponse.json() or [])
+
+def modifier(table, filtre, donnees, jeton=None):
+
+    if not filtre:
+        raise ErreurBase("La modification exige un filtre : refus de toucher une table entiere.",
+                         kind="requete")
+
+    return _appeler("PATCH", table, donnees=donnees, filtre=filtre,
+                    representation=True, jeton=jeton)
 
 def supprimer(table, filtre):
 
@@ -232,7 +254,8 @@ def enregistrer_alertes(analyse_id, alertes):
     ecrites = inserer("reseau_alertes", lignes)
     return len(ecrites or [])
 
-def enregistrer_analyse(interface, paquets, communications, resume_par_communication=None):
+def enregistrer_analyse(interface, paquets, communications, resume_par_communication=None,
+                        proprietaire=None):
 
     resume_par_communication = resume_par_communication or {}
 
@@ -244,6 +267,7 @@ def enregistrer_analyse(interface, paquets, communications, resume_par_communica
         "nb_paquets": paquets,
         "nb_communications": len(communications),
         "octets": total_octets,
+        "proprietaire_id": proprietaire,
     })
     if not analyse:
         raise ErreurBase("La base n'a pas renvoyé l'analyse enregistrée.", kind="reponse")

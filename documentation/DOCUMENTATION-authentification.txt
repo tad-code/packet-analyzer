@@ -1,0 +1,300 @@
+DOCUMENTATION — authentification et cloisonnement des donnees
+=============================================================
+
+Ce document suit la structure du code. Il explique, dans l'ordre, le role du
+paquet `authentification/`, celui des routes ajoutees dans `webapp/routes_auth.py`,
+les changements faits dans les modules existants, et les politiques de securite
+posees dans la base.
+
+PRINCIPE RETENU
+---------------
+L'identite des utilisateurs est celle de Supabase Auth (courriel + mot de passe).
+Le service renvoie un jeton signe par le projet Supabase ; ce jeton porte
+l'identifiant du compte (`auth.uid()` cote base). C'est ce qui permet a la base
+elle-meme de refuser les lignes d'un autre compte : les politiques de securite
+par ligne comparent `proprietaire_id` a `auth.uid()`.
+
+Une authentification geree par l'application (mot de passe hache dans une table)
+aurait oblige la base a faire confiance a un filtre ecrit par le code : une
+requete oubliee, et les donnees d'un autre compte revenaient. Avec Supabase Auth,
+le cloisonnement ne depend plus de la correction de chaque requete.
+
+
+authentification/__init__.py
+----------------------------
+Paquet vide : marque le dossier comme paquet Python, comme `analyse/` ou
+`stockage/`.
+
+
+authentification/service.py
+---------------------------
+Parle au service de comptes de Supabase (API REST `/auth/v1`). Aucune dependance
+supplementaire : `requests` et les variables de configuration existantes.
+
+MESSAGES
+    Table de traduction des codes d'erreur anglophones de Supabase vers des
+    phrases francaises utilisables telles quelles dans l'interface.
+
+class ErreurCompte
+    Erreur unique du module, avec `message` (phrase francaise), `detail` (texte
+    brut du service) et `statut` (code HTTP).
+
+_adresse(chemin)
+    Construit l'adresse d'un point d'entree du service de comptes.
+
+configuration_prete()
+    Vrai si l'adresse du projet et la cle publique sont renseignees.
+
+_entetes(privileges)
+    En-tetes de la requete. Sans `privileges`, la cle publique est employee : un
+    appel de connexion ordinaire n'a pas besoin de plus. Avec `privileges`, la cle
+    secrete est employee : elle seule peut creer un compte.
+
+_corps(reponse)
+    Lit le corps JSON sans jamais lever d'exception.
+
+_traduire(reponse, defaut)
+    Transforme une erreur du service en `ErreurCompte` avec une phrase francaise.
+
+_appeler(methode, chemin, donnees, privileges, defaut)
+    Appel HTTP commun. Traduit les pannes de reseau (delai, injoignable) en
+    messages clairs, et refuse d'envoyer quoi que ce soit si la configuration
+    manque.
+
+_connexion(corps)
+    Extrait d'une reponse de Supabase la session utilisable : identifiant,
+    courriel, jeton d'acces, jeton de rafraichissement et date d'expiration.
+
+connecter(courriel, mot_de_passe)
+    Connexion par mot de passe. Renvoie la session. Un courriel vide ou un mot de
+    passe vide est refuse avant tout appel reseau.
+
+rafraichir(jeton_rafraichissement)
+    Renouvelle la session a partir du jeton de rafraichissement.
+
+creer_compte(courriel, mot_de_passe)
+    Cree un compte confirme, par l'API d'administration (cle secrete). Le compte
+    est utilisable immediatement : aucun courriel de confirmation n'est requis, ce
+    qui evite de dependre d'un service d'envoi de courriel.
+
+rechercher(courriel)
+    Retrouve un compte par son courriel, parmi les comptes du projet.
+
+utilisateurs()
+    Liste des comptes, sans identifiants sensibles.
+
+creer_ou_retrouver(courriel, mot_de_passe)
+    Creation idempotente : sert aux outils de mise en place et de preuve.
+
+verifier(courriel, mot_de_passe)
+    Teste qu'un couple courriel/mot de passe fonctionne, sans lever d'exception.
+
+
+authentification/session.py
+---------------------------
+Relie le service de comptes a la session Flask (cookie signe).
+
+CLE
+    Nom de l'entree de session qui porte le compte connecte.
+
+utilisateur() / identifiant() / courriel() / connecte()
+    Lecture de la session. `utilisateur()` renvoie None si personne n'est
+    connecte, ce qui evite de tester trois champs a chaque appel.
+
+ouvrir(connexion)
+    Range la session du compte dans le cookie, en session permanente.
+
+fermer()
+    Retire le compte du cookie : les pages de donnees redeviennent inaccessibles.
+
+jeton()
+    Renvoie un jeton d'acces valide. Si le jeton est sur le point d'expirer, il est
+    renouvele par le service ; si le renouvellement echoue, la session est fermee
+    et la fonction renvoie None (l'appelant renvoie vers la connexion). Ce point
+    est important : aucune lecture de donnees ne doit se rabattre sur la cle de
+    service quand un compte est connecte.
+
+suite_demandee()
+    Lit le parametre `suite` (page demandee avant la connexion) en refusant les
+    adresses externes : seules les adresses internes commencant par « / » sont
+    acceptees.
+
+connexion_requise(vue)
+    Decorateur des pages de donnees. Sans compte, ou sans jeton valide, la page
+    n'est pas servie : redirection vers la connexion.
+
+COMPTE_LOCAL_ESSAYE
+    Memoire d'une tentative : la connexion automatique n'est pas retentee a chaque
+    requete si elle a echoue.
+
+ouvrir_compte_local()
+    Connecte automatiquement l'instance locale au compte declare dans
+    `ANALYSEUR_COMPTE_COURRIEL` / `ANALYSEUR_COMPTE_MOT_DE_PASSE`. C'est ce qui
+    fait qu'une capture locale est attribuee au compte de la personne qui a lance
+    la capture, et non a un compte unique partage par toutes les installations.
+
+
+webapp/routes_auth.py
+---------------------
+Page de connexion, page d'inscription, deconnexion.
+
+comptes
+    Blueprint Flask, comme `routes`.
+
+MESSAGES
+    Phrases affichees apres une redirection (session expiree, deconnexion).
+
+connexion()  (GET /connexion, POST /connexion)
+    Affiche le formulaire, ou verifie le couple courriel/mot de passe. En cas de
+    succes, l'utilisateur est renvoye vers la page qu'il demandait, sinon vers le
+    tableau de bord. Un GET alors qu'une session est deja ouverte renvoie au
+    tableau de bord ; un POST est toujours traite, ce qui permet de changer de
+    compte depuis l'instance locale.
+
+inscription()  (GET /inscription, POST /inscription)
+    Cree un compte avec confirmation du mot de passe, puis connecte aussitot.
+    Fermable par `INSCRIPTION_OUVERTE=0`.
+
+deconnexion()  (POST /deconnexion)
+    Ferme la session.
+
+
+webapp/routes.py — ce qui change
+--------------------------------
+_proprietaire()
+    Identifiant du compte connecte.
+
+_lire(table, filtre, limite, ordre)
+    Lecture de la base AU NOM DU COMPTE CONNECTE (jeton du compte, cle publique).
+    Sans jeton, elle refuse de lire : aucune page de donnees ne peut donc lire
+    avec la cle de service.
+
+_filtre_proprietaire()
+    Filtre `proprietaire_id=eq.<compte>` ajoute a chaque liste. Il double la
+    securite par ligne : la base refuserait deja les autres lignes, le filtre rend
+    l'intention lisible.
+
+_appartient_a_un_autre(analyse_id)
+    Verifie, avec la cle de service, si une capture existe et appartient a un autre
+    compte. Sert uniquement a distinguer « refusee » (403) de « inexistante »
+    (404), sans jamais afficher son contenu.
+
+_refus(analyse_id, page)
+    Reponse unique des acces non autorises : 403 « Acces refuse » si la capture
+    appartient a un autre compte, 404 sinon.
+
+accueil()  (GET /)
+    Page publique d'explication et de connexion quand personne n'est connecte ;
+    tableau de bord du compte connecte sinon. Aucune lecture de base n'est faite
+    sans compte.
+
+Pages de donnees
+    `/communications`, `/communication/<cle>`, `/capture`, `/capture/demarrer`,
+    `/capture/arreter`, `/capture/vider`, `/capture/enregistrer`, `/historique`,
+    `/historique/<id>`, `/historique/<id>/communication/<id>`, `/alertes`,
+    `/protocoles` portent toutes `@connexion_requise`.
+
+enregistrer()  (POST /capture/enregistrer)
+    Ecrit la capture avec `proprietaire=<compte connecte>` : l'ecriture emploie la
+    cle de service, reservee a cet usage (capturer depuis la machine locale), mais
+    la ligne porte l'identite du compte, jamais un nom unique partage.
+
+Pages publiques
+    `/glossaire` et `/health` n'exposent aucune capture et restent accessibles sans
+    compte. `/protocoles` est passe derriere la connexion.
+
+
+webapp/rendu.py — ce qui change
+-------------------------------
+`rendre()` ajoute a chaque page `connecte`, `compte` (courriel du compte connecte)
+et `demonstration` (identifiants publics du compte de demonstration), pour que le
+bandeau et le menu sachent quoi proposer.
+
+
+app.py — ce qui change
+----------------------
+- la cle qui signe le cookie de session vient de `FLASK_SECRET_KEY` ; a defaut,
+  elle est calculee a partir du projet Supabase, ce qui evite de casser les
+  sessions quand la variable n'est pas renseignee ;
+- le cookie est `HttpOnly`, `SameSite=Lax`, et `Secure` en ligne ;
+- le blueprint `comptes` est enregistre ;
+- `compte_de_cette_machine()` ouvre automatiquement le compte local declare dans
+  la configuration, sauf sur les pages de connexion, les fichiers statiques et
+  `/health`;
+- un gestionnaire 401 et un gestionnaire 403 renvoient des pages explicatives.
+
+
+config.py — ce qui change
+-------------------------
+Nouvelles variables, toutes optionnelles : `FLASK_SECRET_KEY`,
+`SESSION_COOKIE_SECURE`, `INSCRIPTION_OUVERTE`, `MONTRE_COMPTE_DEMONSTRATION`,
+`COMPTE_DEMONSTRATION_COURRIEL`, `COMPTE_DEMONSTRATION_MOT_DE_PASSE`,
+`ANALYSEUR_COMPTE_COURRIEL`, `ANALYSEUR_COMPTE_MOT_DE_PASSE`.
+
+compte_local_configure()
+    Vrai si l'instance locale connait le compte auquel rattacher ses captures.
+
+authentification_prete()
+    Vrai si l'adresse du projet et la cle publique sont la : les comptes sont
+    utilisables.
+
+compte_demonstration()
+    Identifiants publics affiches sur la page d'accueil.
+
+
+stockage/supabase.py — ce qui change
+------------------------------------
+- `_entetes(representation, jeton)` : avec un jeton de compte, la cle publique est
+  employee en `apikey` et le jeton en `Authorization`. C'est cette combinaison qui
+  fait appliquer la securite par ligne.
+- `_appeler`, `inserer`, `lire`, `compter` acceptent `jeton` : la lecture peut donc
+  se faire au nom du compte connecte.
+- `modifier(table, filtre, donnees, jeton)` : modification ciblee, avec obligation
+  d'un filtre.
+- `disponible_utilisateur()` : indique si la lecture au nom d'un compte est
+  possible (adresse + cle publique).
+- `enregistrer_analyse(..., proprietaire)` : la ligne de capture porte le compte.
+
+Sans jeton, le comportement precedent est conserve : la cle secrete est employee.
+C'est l'usage de la capture locale et des outils de mise en place.
+
+
+sql/cloisonnement.sql
+---------------------
+A executer une fois sur le projet Supabase existant (editeur SQL, ou API
+Management). Sans suppression de donnees :
+
+- ajout de `proprietaire_id uuid` sur `reseau_analyses`, et index associe ;
+- rappel de l'activation de la securite par ligne sur les trois tables ;
+- politique `analyses_proprietaire` : un compte ne voit que les lignes dont il est
+  proprietaire, et ne peut ecrire que pour lui-meme ;
+- politique `communications_proprietaire` : une communication n'est visible que si
+  sa capture appartient au compte ;
+- politique `alertes_proprietaire` : meme regle pour les alertes ;
+- droit de lecture des trois tables au role `authenticated`.
+
+Les politiques visent le role `authenticated` : la cle publique seule (role `anon`)
+ne voit rien. La cle de service continue de tout voir, et sert uniquement a
+l'enregistrement local et aux outils.
+
+
+tools/mettre_en_place_comptes.py
+--------------------------------
+Met le cloisonnement en place : envoie `sql/cloisonnement.sql` par l'API
+Management si `SUPABASE_ACCESS_TOKEN` est renseignee, cree les comptes s'ils
+n'existent pas, puis attribue les captures deja enregistrees (celles sans
+proprietaire) au compte de demonstration. Re-executable sans effet de bord.
+
+
+tools/prover_cloisonnement.py
+-----------------------------
+Preuve du cloisonnement, en trois parties :
+
+1. la base interrogee directement (cle publique + jeton de chaque compte) : chaque
+   compte ne recoit que ses propres lignes, et sans compte rien n'est servi ;
+2. l'application : un visiteur sans compte est renvoye vers la connexion, chaque
+   compte ne voit que ses captures, et l'acces direct a la capture d'un autre
+   compte repond 403 ;
+3. une synthese qui compte les echecs.
+
+Usage : `python tools/prover_cloisonnement.py` (local) ou avec l'adresse en ligne.

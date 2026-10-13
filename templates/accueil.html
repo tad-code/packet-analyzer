@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block titre %}Analyseur réseau intelligent{% endblock %}
+
+{% block contenu %}
+
+{% if message %}
+<div class="bandeau info"><p>{{ message }}</p></div>
+{% endif %}
+
+<section class="carte">
+    <h2>Voir qui parle à qui sur votre réseau, expliqué en français</h2>
+    <p>
+        L'analyseur lit le trafic réseau de votre machine, regroupe les paquets en
+        <strong>communications</strong> (une machine, un serveur, un service, un volume)
+        et explique chacune en trois niveaux qui ne sont jamais mélangés :
+        <strong>ce qui a été observé</strong>, <strong>ce qui en est déduit</strong>,
+        et <strong>ce qui reste une hypothèse</strong>.
+    </p>
+    <p class="petit">
+        Cet outil n'analyse que le trafic d'un réseau sur lequel vous êtes autorisé à
+        travailler. Le contenu des communications chiffrées (HTTPS) n'est pas lisible :
+        seules les métadonnées sont observées.
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Vos données sont privées par utilisateur</h2>
+    <p>
+        Chaque capture enregistrée appartient au <strong>compte qui l'a produite</strong>.
+        Les pages de données — historique, communications, alertes — ne montrent que les
+        captures du compte connecté, et la base elle-même refuse de servir les captures
+        d'un autre compte (sécurité par ligne de Supabase). Un accès direct à l'adresse
+        d'une capture qui ne vous appartient pas est refusé.
+    </p>
+    {% if demonstration %}
+    <div class="deux-colonnes">
+        <div class="carte">
+            <h3>Compte de démonstration</h3>
+            <p>
+                Il porte les captures déjà enregistrées. Il est public, prévu pour la
+                visite de l'application.
+            </p>
+            <table class="tableau-questions">
+                <tr><th>Courriel</th><td class="mono">{{ demonstration.courriel }}</td></tr>
+                <tr><th>Mot de passe</th><td class="mono">{{ demonstration.mot_de_passe }}</td></tr>
+            </table>
+            <p><a class="bouton-lien" href="{{ url_for('comptes.connexion') }}">Se connecter</a></p>
+        </div>
+        <div class="carte">
+            <h3>Votre propre compte</h3>
+            <p>
+                Créez un compte : il démarre vide. Les captures que vous enregistrez
+                depuis votre machine sont rattachées à ce compte, et personne d'autre
+                ne les voit.
+            </p>
+            <p>
+                <a class="bouton-lien" href="{{ url_for('comptes.inscription') }}">Créer un compte</a>
+            </p>
+            <p><a href="{{ url_for('routes.glossaire') }}">Glossaire du vocabulaire employé</a></p>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+<section class="carte">
+    <h3>Comment ça marche</h3>
+    <ol class="etapes">
+        <li><strong>Capture locale</strong> — sur votre machine, avec le pilote Npcap, comme
+            Wireshark : démarrer, produire du trafic, arrêter. Un serveur distant ne peut pas
+            le faire, il n'a pas de carte réseau à observer.</li>
+        <li><strong>Analyse et regroupement</strong> — chaque paquet devient des champs nommés,
+            puis les échanges d'une même conversation forment une seule communication.</li>
+        <li><strong>Explication</strong> — les phrases sont produites à partir des faits observés,
+            et enregistrées avec la capture.</li>
+        <li><strong>Consultation en ligne</strong> — l'historique, les communications et les
+            alertes d'un compte se consultent ici, ou depuis l'instance locale.</li>
+    </ol>
+</section>
+
+{% endblock %}

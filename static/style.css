@@ -327,6 +327,28 @@ ol.etapes .mono, .bandeau .mono { color: var(--texte); }
     text-align: center;
 }
 
+input[type="email"], input[type="password"], input[type="text"] {
+    font-family: inherit; font-size: 14px; padding: 9px 15px;
+    border-radius: 9px; border: 1px solid var(--bord-clair);
+    background: var(--fond-doux); color: var(--texte);
+    transition: border-color .15s ease, background .15s ease;
+}
+input[type="email"]:focus, input[type="password"]:focus, input[type="text"]:focus {
+    border-color: var(--accent); outline: none; background: var(--fond-survol);
+}
+
+.compte-entete { display: inline-flex; align-items: center; gap: 11px; }
+.compte-entete .courriel { color: var(--texte); font-weight: 550; }
+.compte-entete form { margin: 0; display: inline; }
+
+.formulaire-compte { display: grid; gap: 14px; max-width: 430px; margin-top: 18px; }
+.formulaire-compte label { display: block; margin-bottom: 6px; }
+.formulaire-compte input { width: 100%; }
+
+.etapes { margin: 8px 0 0; padding-left: 22px; color: var(--texte-doux); }
+.etapes li { margin-bottom: 9px; }
+.etapes strong { color: var(--texte); }
+
 @media (max-width: 760px) {
     .conteneur { padding: 0 16px; }
     .carte { padding: 18px; }

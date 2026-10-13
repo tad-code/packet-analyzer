@@ -57,3 +57,7 @@ create table if not exists reseau_alertes (
 create index if not exists idx_alertes_analyse
     on reseau_alertes (analyse_id);
 alter table reseau_alertes enable row level security;
+alter table reseau_analyses
+    add column if not exists proprietaire_id uuid;
+create index if not exists idx_analyses_proprietaire
+    on reseau_analyses (proprietaire_id);

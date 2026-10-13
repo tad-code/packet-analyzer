@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block titre %}Connexion — Analyseur réseau{% endblock %}
+
+{% block contenu %}
+
+<section class="carte">
+    <h2>Se connecter</h2>
+    <p>
+        Cette application est privée par utilisateur : chaque compte ne voit que les
+        captures qu'il a enregistrées. Connectez-vous pour accéder à vos données.
+    </p>
+
+    {% if message %}
+    <div class="bandeau info"><p>{{ message }}</p></div>
+    {% endif %}
+
+    {% if erreur %}
+    <div class="bandeau alerte">
+        <p>{{ erreur }}</p>
+        {% if erreur_detail %}<p class="petit">{{ erreur_detail }}</p>{% endif %}
+    </div>
+    {% endif %}
+
+    <form class="formulaire-compte" method="post" action="{{ url_for('comptes.connexion') }}">
+        <input type="hidden" name="suite" value="{{ suite }}">
+        <div>
+            <label for="courriel">Courriel</label>
+            <input id="courriel" name="courriel" type="email" autocomplete="username"
+                   value="{{ courriel }}" required autofocus>
+        </div>
+        <div>
+            <label for="mot_de_passe">Mot de passe</label>
+            <input id="mot_de_passe" name="mot_de_passe" type="password"
+                   autocomplete="current-password" required>
+        </div>
+        <div>
+            <button class="principal" type="submit">Se connecter</button>
+        </div>
+    </form>
+</section>
+
+<section class="carte">
+    <h3>Pas encore de compte ?</h3>
+    <p>
+        La création d'un compte est ouverte : vous obtenez un espace vide, où seules
+        vos propres captures apparaîtront.
+        <a href="{{ url_for('comptes.inscription') }}">Créer un compte</a>.
+    </p>
+</section>
+
+{% endblock %}

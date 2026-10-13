@@ -4,6 +4,8 @@ from flask import Blueprint, jsonify, redirect, request, url_for
 
 from analyse.paquet import PORTS_CONNUS, analyser
 from analyse.protocoles import DRAPEAUX, PORTS, PROTOCOLES, expliquer_drapeaux
+from authentification import session as session_utilisateur
+from authentification.session import connexion_requise
 from capture.interfaces import lister_interfaces, proposer_interface
 from capture.moteur import ErreurCapture, MoteurCapture
 from communications.regroupement import regrouper, repondre_questions, statistiques
@@ -27,7 +29,55 @@ MESSAGES = {
     "demarree": "La capture a démarré.",
     "arretee": "La capture a été arrêtée.",
     "videe": "La liste a été vidée.",
+    "deconnecte": "Vous êtes déconnecté. Les données ne sont plus visibles sur ce navigateur.",
 }
+
+def _proprietaire():
+
+    return session_utilisateur.identifiant()
+
+def _lire(table, filtre="", limite=None, ordre=None):
+
+    jeton = session_utilisateur.jeton()
+    if not jeton:
+        raise ErreurBase("Votre session a expiré : reconnectez-vous.",
+                         kind="session",
+                         detail="Aucune lecture n'est faite sans compte connecté.")
+
+    return supabase.lire(table, filtre=filtre, limite=limite, ordre=ordre, jeton=jeton)
+
+def _filtre_proprietaire():
+
+    return f"proprietaire_id=eq.{_proprietaire()}"
+
+def _appartient_a_un_autre(analyse_id):
+
+    if not supabase.disponible()[0]:
+        return False
+
+    try:
+        lignes = supabase.lire("reseau_analyses", filtre=f"id=eq.{analyse_id}", limite=1)
+    except ErreurBase:
+        return False
+
+    if not lignes:
+        return False
+
+    return lignes[0].get("proprietaire_id") != _proprietaire()
+
+def _refus(analyse_id, page="historique"):
+
+    if _appartient_a_un_autre(analyse_id):
+        return rendre("erreur.html", page, code=403,
+                      titre="Accès refusé",
+                      explication="Cette capture appartient à un autre compte.",
+                      detail="Chaque compte ne voit que ses propres captures. "
+                             "Connectez-vous avec le compte qui l'a enregistrée."), 403
+
+    return rendre("erreur.html", page, code=404,
+                  titre="Capture introuvable",
+                  explication=f"Aucune capture ne vous est accessible sous le numéro {analyse_id}.",
+                  detail="Consultez la liste de l'historique de votre compte."), 404
 
 def _paquets_analyses():
 
@@ -71,10 +121,11 @@ def _contexte_capture(interface_proposee=None):
 
 def _derniere_capture():
 
-    if not supabase.disponible()[0]:
+    if not supabase.disponible_utilisateur()[0]:
         return None
     try:
-        lignes = supabase.lire("reseau_analyses", ordre="id.desc", limite=1)
+        lignes = _lire("reseau_analyses", filtre=_filtre_proprietaire(),
+                       ordre="id.desc", limite=1)
     except ErreurBase:
         return None
     return lignes[0] if lignes else None
@@ -88,8 +139,8 @@ def _communications():
     if not analyse:
         return []
     try:
-        lignes = supabase.lire("reseau_communications",
-                               f"analyse_id=eq.{analyse['id']}", limite=500)
+        lignes = _lire("reseau_communications",
+                       f"analyse_id=eq.{analyse['id']}", limite=500)
     except ErreurBase:
         return []
 
@@ -97,6 +148,13 @@ def _communications():
 
 @routes.route("/")
 def accueil():
+
+    if not session_utilisateur.identifiant():
+        return rendre("accueil.html", "accueil",
+                      message=MESSAGES.get(request.args.get("fin")))
+
+    if not session_utilisateur.jeton():
+        return redirect(url_for("comptes.connexion", fin="expiree"))
 
     communications = _communications()
     return rendre("tableau_bord.html", "tableau",
@@ -108,6 +166,7 @@ def accueil():
                   interface_active=moteur.interface())
 
 @routes.route("/communications")
+@connexion_requise
 def communications():
 
     toutes = _communications()
@@ -116,6 +175,7 @@ def communications():
                   capture_en_cours=moteur.en_cours())
 
 @routes.route("/communication/<path:cle>")
+@connexion_requise
 def communication_detail(cle):
 
     for communication in _communications():
@@ -137,6 +197,7 @@ def communication_detail(cle):
                          "ancienne peut avoir été oubliée."), 404
 
 @routes.route("/capture")
+@connexion_requise
 def capture():
 
     return rendre("capture.html", "capture",
@@ -144,6 +205,7 @@ def capture():
                   **_contexte_capture())
 
 @routes.route("/capture/demarrer", methods=["POST"])
+@connexion_requise
 def demarrer():
 
     if not config.capture_locale:
@@ -161,21 +223,24 @@ def demarrer():
     return redirect(url_for("routes.capture", fait="demarree"))
 
 @routes.route("/capture/arreter", methods=["POST"])
+@connexion_requise
 def arreter():
 
     moteur.arreter()
     return redirect(url_for("routes.capture", fait="arretee"))
 
 @routes.route("/capture/vider", methods=["POST"])
+@connexion_requise
 def vider():
 
     moteur.vider()
     return redirect(url_for("routes.capture", fait="videe"))
 
 @routes.route("/historique")
+@connexion_requise
 def historique():
 
-    disponible, raison = supabase.disponible()
+    disponible, raison = supabase.disponible_utilisateur()
 
     if not disponible:
         return rendre("historique.html", "historique",
@@ -188,7 +253,8 @@ def historique():
 
     analyses, erreur, detail = [], None, None
     try:
-        analyses = supabase.lire("reseau_analyses", ordre="debut.desc", limite=50)
+        analyses = _lire("reseau_analyses", filtre=_filtre_proprietaire(),
+                         ordre="debut.desc", limite=50)
 
     except ErreurBase as e:
         erreur, detail = e.message, e.detail
@@ -202,9 +268,10 @@ def historique():
                   capture_en_cours=moteur.en_cours())
 
 @routes.route("/historique/<int:analyse_id>")
+@connexion_requise
 def historique_detail(analyse_id):
 
-    disponible, raison = supabase.disponible()
+    disponible, raison = supabase.disponible_utilisateur()
     if not disponible:
         return rendre("historique.html", "historique",
                       disponible=False, raison=raison, analyses=[],
@@ -212,8 +279,19 @@ def historique_detail(analyse_id):
                       capture_en_cours=moteur.en_cours())
 
     try:
-        analyses = supabase.lire("reseau_analyses", filtre=f"id=eq.{analyse_id}", limite=1)
-        communications = supabase.lire(
+        analyses = _lire("reseau_analyses",
+                         filtre=f"id=eq.{analyse_id}&{_filtre_proprietaire()}", limite=1)
+    except ErreurBase as e:
+        return rendre("historique.html", "historique",
+                      disponible=True, raison=None, analyses=[],
+                      erreur=e.message, erreur_detail=e.detail,
+                      capture_en_cours=moteur.en_cours())
+
+    if not analyses:
+        return _refus(analyse_id)
+
+    try:
+        communications = _lire(
             "reseau_communications",
             filtre=f"analyse_id=eq.{analyse_id}",
             ordre="nb_paquets.desc",
@@ -224,12 +302,6 @@ def historique_detail(analyse_id):
                       disponible=True, raison=None, analyses=[],
                       erreur=e.message, erreur_detail=e.detail,
                       capture_en_cours=moteur.en_cours())
-
-    if not analyses:
-        return rendre("erreur.html", "historique", code=404,
-                      titre="Capture introuvable",
-                      explication=f"Aucune capture enregistrée ne porte le numéro {analyse_id}.",
-                      detail="Consultez la liste de l'historique."), 404
 
     expliquees = [
         {"ligne": c, "explication": expliquer(depuis_ligne_enregistree(c))}
@@ -242,6 +314,7 @@ def historique_detail(analyse_id):
                   capture_en_cours=moteur.en_cours())
 
 @routes.route("/capture/enregistrer", methods=["POST"])
+@connexion_requise
 def enregistrer():
 
     disponible, raison = supabase.disponible()
@@ -264,6 +337,7 @@ def enregistrer():
             paquets=len(paquets),
             communications=communications,
             resume_par_communication=resume_par_communication,
+            proprietaire=_proprietaire(),
         )
     except ErreurBase as e:
         return rendre("capture.html", "capture",
@@ -282,9 +356,10 @@ def enregistrer():
     return redirect(url_for("routes.historique_detail", analyse_id=identifiant))
 
 @routes.route("/historique/<int:analyse_id>/communication/<int:communication_id>")
+@connexion_requise
 def historique_communication(analyse_id, communication_id):
 
-    disponible, raison = supabase.disponible()
+    disponible, raison = supabase.disponible_utilisateur()
     if not disponible:
         return rendre("historique.html", "historique",
                       disponible=False, raison=raison, analyses=[],
@@ -292,18 +367,28 @@ def historique_communication(analyse_id, communication_id):
                       capture_en_cours=moteur.en_cours())
 
     try:
-        lignes = supabase.lire("reseau_communications",
-
-                               filtre=f"id=eq.{communication_id}&analyse_id=eq.{analyse_id}",
-                               limite=1)
-        analyses = supabase.lire("reseau_analyses", filtre=f"id=eq.{analyse_id}", limite=1)
+        analyses = _lire("reseau_analyses",
+                         filtre=f"id=eq.{analyse_id}&{_filtre_proprietaire()}", limite=1)
     except ErreurBase as e:
         return rendre("historique.html", "historique",
                       disponible=True, raison=None, analyses=[],
                       erreur=e.message, erreur_detail=e.detail,
                       capture_en_cours=moteur.en_cours())
 
-    if not lignes or not analyses:
+    if not analyses:
+        return _refus(analyse_id)
+
+    try:
+        lignes = _lire("reseau_communications",
+                       filtre=f"id=eq.{communication_id}&analyse_id=eq.{analyse_id}",
+                       limite=1)
+    except ErreurBase as e:
+        return rendre("historique.html", "historique",
+                      disponible=True, raison=None, analyses=[],
+                      erreur=e.message, erreur_detail=e.detail,
+                      capture_en_cours=moteur.en_cours())
+
+    if not lignes:
         return rendre("erreur.html", "historique", code=404,
                       titre="Communication introuvable",
                       explication="Cette communication n'existe pas dans la capture demandée.",
@@ -322,6 +407,7 @@ def historique_communication(analyse_id, communication_id):
                   capture_en_cours=moteur.en_cours())
 
 @routes.route("/alertes")
+@connexion_requise
 def alertes():
 
     communications = _communications()
@@ -352,6 +438,7 @@ def alertes():
                   nb_communications=len(communications))
 
 @routes.route("/protocoles")
+@connexion_requise
 def protocoles():
 
     return rendre("protocoles.html", "protocoles",
