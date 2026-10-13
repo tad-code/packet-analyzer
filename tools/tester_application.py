@@ -1,16 +1,27 @@
 
 
 import html
+import http.cookiejar
+import os
 import re
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
-BASE = "http://127.0.0.1:5000"
+RACINE = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(RACINE))
+
+from config import config
+
+BASE = os.getenv("ANALYSEUR_ADRESSE", "http://127.0.0.1:5000")
 
 resultats = []
+
+ouvreur = urllib.request.build_opener(
+    urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 
 def demander(chemin, methode="GET", donnees=None):
 
@@ -19,7 +30,7 @@ def demander(chemin, methode="GET", donnees=None):
     if corps:
         requete.add_header("Content-Type", "application/x-www-form-urlencoded")
     try:
-        with urllib.request.urlopen(requete, timeout=30) as r:
+        with ouvreur.open(requete, timeout=30) as r:
             return r.status, html.unescape(r.read().decode("utf-8", errors="replace"))
     except urllib.error.HTTPError as e:
         return e.code, html.unescape(e.read().decode("utf-8", errors="replace"))
@@ -54,6 +65,18 @@ print("1. Le service repond")
 code, contenu = demander("/health")
 verifier("la sonde /health repond 200", code == 200, f"code {code}")
 verifier("elle annonce le mode et les paquets vus", "mode" in contenu and "paquets_vus" in contenu)
+print()
+
+print("1b. Connexion au compte de cette machine")
+courriel = config.compte_demonstration_courriel or config.compte_local_courriel
+mot_de_passe = config.compte_demonstration_mot_de_passe or config.compte_local_mot_de_passe
+code, page = demander("/historique")
+verifier("sans compte, les donnees sont refusees", "Se connecter" in page and "Tableau de bord" not in page,
+         f"code {code}")
+
+code, page = demander("/connexion", "POST",
+                      {"courriel": courriel, "mot_de_passe": mot_de_passe, "suite": ""})
+verifier("la connexion est acceptee", "Se déconnecter" in page, f"code {code}")
 print()
 
 print("2. Le tableau de bord")

@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import time
+import http.cookiejar
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -11,8 +12,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-BASE = "http://127.0.0.1:5000"
+from config import config
+
+BASE = os.getenv("ANALYSEUR_ADRESSE", "http://127.0.0.1:5000")
 succes, echecs = [], []
+
+ouvreur = urllib.request.build_opener(
+    urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 
 def verifier(intitule, condition, detail=""):
     (succes if condition else echecs).append(intitule)
@@ -26,7 +32,7 @@ def demander(chemin, methode="GET", donnees=None):
     if corps:
         requete.add_header("Content-Type", "application/x-www-form-urlencoded")
     try:
-        with urllib.request.urlopen(requete, timeout=60) as r:
+        with ouvreur.open(requete, timeout=60) as r:
             return r.status, r.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode("utf-8", "replace")
@@ -36,6 +42,15 @@ print("=" * 74)
 print("  TEST DE BOUT EN BOUT : CAPTURE -> ENREGISTREMENT -> HISTORIQUE")
 print("=" * 74)
 
+print()
+print("0. Connexion du compte de cette machine")
+
+courriel = config.compte_local_courriel or config.compte_demonstration_courriel
+mot_de_passe = config.compte_local_mot_de_passe or config.compte_demonstration_mot_de_passe
+code, page = demander("/connexion", "POST",
+                      {"courriel": courriel, "mot_de_passe": mot_de_passe, "suite": ""})
+verifier("la connexion est acceptee", "Se déconnecter" in page, f"code {code}")
+verifier("la capture sera attribuee a ce compte", courriel in page, courriel)
 print()
 print("1. Preparation")
 
