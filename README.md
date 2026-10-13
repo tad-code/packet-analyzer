@@ -195,12 +195,45 @@ le projet :
 demarrer-analyseur.bat
 ```
 
-Le script ouvre l'application locale, puis :
+Le script ouvre l'application locale, puis affiche **deux** adresses :
 
-**Adresse locale : <http://127.0.0.1:5000>**
+**Adresse locale (cette machine) : <http://127.0.0.1:5000>** — la session
+s'ouvre automatiquement, rien à saisir.
+
+**Adresse réseau (téléphone, même Wi-Fi) : `http://192.168.1.15:5000`** — le
+script affiche l'adresse IPv4 réelle de la machine (ici `192.168.1.15`) sur le
+port `5000`. Ouvrez-la depuis le téléphone connecté au même réseau.
 
 Laissez la fenêtre ouverte pendant l'utilisation ; fermez-la (ou `Ctrl+C`) pour
 arrêter l'analyseur.
+
+**Variable `HOST`.** L'écoute est réglée par `HOST` (dans `.env`, surchargée par
+`demarrer-analyseur.bat`) :
+
+| `HOST` | Qui peut joindre l'application |
+| --- | --- |
+| `127.0.0.1` | cette machine uniquement (valeur par défaut, la plus sûre) |
+| `0.0.0.0` | cette machine **et** tout appareil du réseau local (Wi-Fi) |
+
+Le script `demarrer-analyseur.bat` force `HOST=0.0.0.0` pour permettre l'accès
+depuis le téléphone. **Conséquence, voulue :** sur cette machine le compte local
+s'ouvre tout seul, mais **une requête venue du réseau ne bénéficie d'aucune
+connexion automatique** — elle doit passer par `/connexion` et saisir un
+identifiant. Les captures de cette machine ne s'affichent donc jamais toutes
+seules pour un visiteur du réseau. Cette restriction est vérifiée par les tests
+(`tests/test_cloisonnement.py`) : `ouvrir_compte_local()` n'est appelé que si la
+requête vient de `127.0.0.1` ou `::1`.
+
+**Pare-feu Windows.** Si le téléphone ouvre la page mais n'obtient rien, c'est
+que le port d'écoute est bloqué en entrée. Une seule règle suffit, à exécuter
+**une fois, dans une invite de commandes ouverte en administrateur** :
+
+```bat
+netsh advfirewall firewall add rule name="Analyseur reseau 5000" dir=in action=allow protocol=TCP localport=5000
+```
+
+À exécuter uniquement si vous le souhaitez : cette commande ouvre le port à
+tout le réseau local, elle demande l'accord du propriétaire de la machine.
 
 > **C'est le seul mode où la capture est possible.** La version en ligne est en
 > lecture seule : un serveur distant n'a aucun accès au réseau observé. Le mode est
@@ -221,8 +254,10 @@ ANALYSEUR_COMPTE_COURRIEL=analyste@example.com
 ANALYSEUR_COMPTE_MOT_DE_PASSE=…
 ```
 
-Elle s'y connecte automatiquement au démarrage, et **chaque capture est enregistrée
+Elle s'y connecte automatiquement — **mais uniquement pour les requêtes faites
+depuis cette machine** — et **chaque capture est enregistrée
 au nom de ce compte** — pas d'un compte unique partagé par toutes les installations.
+Une requête arrivée par le réseau, elle, n'obtient aucune connexion automatique.
 Si vous préférez choisir vous-même, laissez ces deux variables vides : la page
 `/connexion` sert alors de porte d'entrée, et la capture appartient au compte avec
 lequel vous vous êtes connecté.

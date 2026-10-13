@@ -375,3 +375,45 @@ def test_le_compte_local_est_utilise_pour_attribuer_les_captures(monkeypatch):
     with application.test_request_context("/"):
         assert session_utilisateur.ouvrir_compte_local() is True
         assert session_utilisateur.identifiant() == COMPTE_A["identifiant"]
+
+
+def test_une_requete_de_cette_machine_ouvre_la_session_automatiquement(client, base_prete, monkeypatch):
+
+    monkeypatch.setattr(config, "compte_local_courriel", "poste-local@example.com")
+    monkeypatch.setattr(config, "compte_local_mot_de_passe", "mot-de-passe-local")
+    monkeypatch.setattr(service, "connecter",
+                        lambda courriel, mot_de_passe: {"identifiant": COMPTE_A["identifiant"],
+                                                        "courriel": courriel, "jeton": "jeton-local",
+                                                        "jeton_rafraichissement": "r",
+                                                        "expire_a": time.time() + 3600})
+    monkeypatch.setattr(routes_module.supabase, "lire", lambda *a, **k: [])
+    session_utilisateur.COMPTE_LOCAL_ESSAYE["fait"] = False
+
+    reponse = client.get("/historique", environ_base={"REMOTE_ADDR": "127.0.0.1"})
+
+    assert reponse.status_code == 200
+    with client.session_transaction() as session_flask:
+        assert session_flask["analyseur_compte"]["identifiant"] == COMPTE_A["identifiant"]
+
+
+def test_une_requete_du_reseau_n_ouvre_aucune_session_automatique(client, base_prete, monkeypatch):
+
+    monkeypatch.setattr(config, "compte_local_courriel", "poste-local@example.com")
+    monkeypatch.setattr(config, "compte_local_mot_de_passe", "mot-de-passe-local")
+    connectes = []
+    monkeypatch.setattr(service, "connecter",
+                        lambda courriel, mot_de_passe: connectes.append(courriel) or {
+                            "identifiant": COMPTE_A["identifiant"], "courriel": courriel,
+                            "jeton": "jeton-local", "jeton_rafraichissement": "r",
+                            "expire_a": time.time() + 3600})
+    monkeypatch.setattr(routes_module.supabase, "lire",
+                        lambda *a, **k: pytest.fail("aucune donnee ne doit etre lue sans compte"))
+    session_utilisateur.COMPTE_LOCAL_ESSAYE["fait"] = False
+
+    reponse = client.get("/historique", environ_base={"REMOTE_ADDR": "192.168.1.50"})
+
+    assert reponse.status_code == 302
+    assert "/connexion" in reponse.headers["Location"]
+    assert connectes == []
+    with client.session_transaction() as session_flask:
+        assert "analyseur_compte" not in session_flask

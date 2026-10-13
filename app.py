@@ -8,6 +8,19 @@ from authentification import session as session_utilisateur
 from config import config
 from webapp.rendu import rendre
 
+ADRESSES_DE_CETTE_MACHINE = {"127.0.0.1", "::1", "::ffff:127.0.0.1"}
+
+def adresse_reseau():
+
+    import socket
+
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sonde:
+            sonde.connect(("8.8.8.8", 80))
+            return sonde.getsockname()[0]
+    except OSError:
+        return None
+
 def creer_application():
 
     application = Flask(__name__)
@@ -35,7 +48,8 @@ def creer_application():
         if (request.endpoint or "").startswith("comptes."):
             return None
 
-        session_utilisateur.ouvrir_compte_local()
+        if request.remote_addr in ADRESSES_DE_CETTE_MACHINE:
+            session_utilisateur.ouvrir_compte_local()
         return None
 
     @application.errorhandler(400)
@@ -109,7 +123,11 @@ if __name__ == "__main__":
     print()
     print("  Analyseur reseau")
     print(f"  mode : {'local (capture active)' if config.capture_locale else 'en ligne (lecture seule)'}")
-    print(f"  adresse : http://{config.hote}:{config.port}")
+    print(f"  adresse locale : http://127.0.0.1:{config.port}")
+    if config.hote == "0.0.0.0":
+        reseau = adresse_reseau()
+        if reseau:
+            print(f"  depuis un telephone du reseau : http://{reseau}:{config.port}")
     print(f"  comptes : {'Supabase Auth' if config.authentification_prete() else 'non configures'}")
     if config.compte_local_configure():
         print(f"  capture attribuee au compte : {config.compte_local_courriel}")
