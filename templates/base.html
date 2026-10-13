@@ -58,6 +58,8 @@
         <a href="{{ url_for('routes.accueil') }}"
            class="{{ 'actif' if page == 'accueil' }}">Accueil</a>
         {% endif %}
+        <a href="{{ url_for('routes.installation') }}"
+           class="{{ 'actif' if page == 'installation' }}">Installation</a>
         <a href="{{ url_for('routes.glossaire') }}"
            class="{{ 'actif' if page == 'glossaire' }}">Glossaire</a>
     </div>

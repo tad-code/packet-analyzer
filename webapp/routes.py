@@ -445,6 +445,12 @@ def protocoles():
                   protocoles=list(PROTOCOLES.values()),
                   ports=list(PORTS.items()))
 
+@routes.route("/installation")
+def installation():
+
+    return rendre("installation.html", "installation")
+
+
 @routes.route("/glossaire")
 def glossaire():
 

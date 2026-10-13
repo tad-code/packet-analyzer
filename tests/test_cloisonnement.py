@@ -83,6 +83,24 @@ def test_le_glossaire_et_l_etat_restent_publics(client, base_prete):
     assert client.get("/glossaire").status_code == 200
     assert client.get("/health").status_code == 200
 
+def test_le_mode_d_emploi_d_installation_est_public_et_complet(client, base_prete):
+
+    reponse = client.get("/installation")
+
+    assert reponse.status_code == 200
+    page = reponse.get_data(as_text=True)
+    for repere in ["Exemple complet d'environnement", "Npcap",
+                   "ANALYSEUR_COMPTE_COURRIEL", "demarrer-analyseur.bat",
+                   "verifier_prerequis.py", "127.0.0.1"]:
+        assert repere in page, repere
+
+def test_le_mode_d_emploi_ne_lit_aucune_donnee(client, base_prete, monkeypatch):
+
+    monkeypatch.setattr(routes_module.supabase, "lire",
+                        lambda *a, **k: pytest.fail("lecture de la base sans compte connecté"))
+
+    assert client.get("/installation").status_code == 200
+
 def test_l_accueil_public_n_expose_aucune_capture(client, base_prete, monkeypatch):
 
     monkeypatch.setattr(routes_module.supabase, "lire",
