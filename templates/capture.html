@@ -8,28 +8,71 @@
 <section class="carte">
     <h2>Capture impossible depuis ce serveur</h2>
     <p>
-        Cette application tourne sur un serveur distant, qui n'a accès à aucune carte
-        réseau : il ne peut pas observer de trafic. C'est une limite technique, pas un
-        réglage.
+        Cette application en ligne tourne sur un serveur distant, qui n'a accès à aucune
+        carte réseau : il ne peut observer aucun trafic. C'est une limite technique, pas un
+        réglage — aucun lien ne permettra jamais de capturer à distance.
     </p>
+    <p>
+        <strong>L'observation se fait sur votre propre ordinateur.</strong> Chaque
+        utilisateur installe et lance l'application chez lui. Ses captures remontent ensuite
+        ici, dans son espace personnel : aucun utilisateur n'accède à la machine d'un autre.
+    </p>
+
+    <h3>Lancer l'application chez vous, en six étapes</h3>
+    <ol class="etapes">
+        <li>
+            <strong>Récupérez le projet</strong> — depuis
+            <span class="mono">https://github.com/tad-code/packet-analyzer</span>,
+            par téléchargement ou par clonage.
+        </li>
+        <li>
+            <strong>Installez les prérequis</strong> — <em>Python 3</em>, puis le pilote de
+            capture <em>Npcap</em> sur Windows. Sans ce pilote, aucune carte réseau n'est
+            lisible. Un utilitaire <span class="mono">verifier_prerequis.py</span> dit ce qui manque.
+        </li>
+        <li>
+            <strong>Déclarez votre compte</strong> — dans le fichier
+            <span class="mono">.env</span>, renseignez
+            <span class="mono">ANALYSEUR_COMPTE_COURRIEL</span> et
+            <span class="mono">ANALYSEUR_COMPTE_MOT_DE_PASSE</span> : c'est le compte
+            auquel vos captures seront rattachées. Créez-le d'abord ici, sur cette page.
+        </li>
+        <li>
+            <strong>Lancez l'application</strong> — <span class="mono">demarrer-analyseur.bat</span>
+            sous Windows, ou <span class="mono">python app.py</span> ailleurs. Un terminal
+            doit rester ouvert.
+        </li>
+        <li>
+            <strong>Ouvrez <span class="mono">http://127.0.0.1:5000</span></strong> —
+            choisissez la carte réseau à écouter, puis démarrez la capture. Faites circuler
+            du trafic pour obtenir des paquets.
+        </li>
+        <li>
+            <strong>Enregistrez la capture</strong> — elle apparaît aussitôt dans votre
+            historique, ici même, et se consulte depuis n'importe quel appareil.
+        </li>
+    </ol>
+
     <p class="petit">
-        L'observation se fait sur votre ordinateur, en mode local. Les captures enregistrées
-        remontent ensuite ici, où elles se consultent. Pour observer votre propre réseau,
-        lancez l'application chez vous et ouvrez <span class="mono">http://127.0.0.1:5000</span>.
+        <strong><span class="mono">127.0.0.1</span> désigne toujours la machine sur laquelle
+        vous êtes.</strong> Cette adresse ne fonctionne donc que sur l'ordinateur où
+        l'application est lancée. Chez quelqu'un qui ne l'a pas installée, elle ne trouvera
+        aucun serveur, et cela restera vrai quels que soient les réglages de son réseau.
     </p>
 </section>
 {% endif %}
 <section class="carte">
     <h2>Que fait cet écran ?</h2>
     <p>
-        Il lit les paquets qui passent sur une carte réseau de cette machine et les
-        affiche au fur et à mesure. Chaque ligne du tableau est <strong>un paquet</strong> :
-        un morceau de données envoyé d'une machine à une autre.
+        Il lit les paquets qui passent sur une carte réseau de la machine où l'application
+        est lancée, et les affiche au fur et à mesure. Chaque ligne du tableau est
+        <strong>un paquet</strong> : un morceau de données envoyé d'une machine à une autre.
     </p>
     <p class="petit">
-        L'analyse en communications, l'explication en langage humain, la détection et
-        l'enrichissement par une API arriveront dans les versions suivantes.
-        Cette version se limite à <strong>capturer et afficher</strong>.
+        Cet écran montre le trafic brut, paquet par paquet. Le regroupement en
+        <strong>communications</strong>, l'<strong>explication en langage humain</strong>,
+        la <strong>détection</strong> et les <strong>alertes</strong> se lisent dans les pages
+        Communications et Alertes, une fois une capture enregistrée.
     </p>
 </section>
 {% if message %}
@@ -54,9 +97,9 @@
 
     {% if not capture_possible %}
         <p class="bandeau neutre">
-            La capture n'est pas disponible dans la version en ligne : elle exige un accès
-            direct à une carte réseau et les droits administrateur, que n'a pas un serveur
-            distant. Cette page affiche les résultats enregistrés par l'application locale.
+            La capture n'est pas possible en ligne : elle exige un accès direct à une carte
+            réseau et les droits administrateur. Le mode d'emploi complet se trouve en haut
+            de cette page — les captures enregistrées chez vous apparaîtront ensuite ici.
         </p>
     {% elif not interfaces %}
         <p class="bandeau neutre">
