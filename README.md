@@ -262,6 +262,36 @@ Si vous préférez choisir vous-même, laissez ces deux variables vides : la pag
 `/connexion` sert alors de porte d'entrée, et la capture appartient au compte avec
 lequel vous vous êtes connecté.
 
+### Tester l'interface depuis un téléphone du même Wi-Fi
+
+L'instance écoute sur `0.0.0.0` : un téléphone placé sur le même réseau peut ouvrir
+`http://<adresse-de-votre-machine>:5000` (l'adresse exacte est affichée au lancement,
+et le script `autoriser-telephone.bat` la rappelle). Ce téléphone ne reçoit **aucune
+connexion automatique** : il doit saisir un identifiant, comme tout visiteur du réseau.
+
+Deux obstacles expliquent la quasi-totalité des échecs, et aucun ne vient de
+l'application :
+
+- **Le réseau est classé « public ».** Les connexions entrantes sont alors refusées —
+  y compris quand le pare-feu Windows est désactivé, car un antivirus doté d'un
+  pare-feu intégré applique sa propre règle sur les réseaux publics. Classer le réseau
+  en privé suffit à rétablir l'accès :
+  `powershell -Command "Set-NetConnectionProfile -InterfaceAlias 'Wi-Fi' -NetworkCategory Private"`
+  Sur un Wi-Fi public (café, hôtel, aéroport), refaites l'opération en sens inverse.
+- **L'isolation des clients sur la box.** Certains routeurs interdisent aux appareils
+  d'un même Wi-Fi de communiquer entre eux. Aucun réglage de l'ordinateur n'y remédie.
+
+Repli qui ne dépend ni du réseau ni des pare-feux : le **câble USB**. Téléphone branché
+et débogage USB activé, une seule commande suffit — le trafic passe alors par le câble :
+
+```
+adb reverse tcp:5000 tcp:5000
+```
+
+Le téléphone ouvre ensuite `http://127.0.0.1:5000`. Comme la requête arrive de la
+machine elle-même, ce téléphone est traité comme cette machine. Retirez le tunnel avec
+`adb reverse --remove-all` pour revenir au comportement normal.
+
 ---
 
 ## 5. La particularité du projet : trois niveaux d'explication
