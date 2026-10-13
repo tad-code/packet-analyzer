@@ -133,3 +133,17 @@ def test_le_rafraichissement_automatique_de_la_capture_est_conserve(client, sans
     page = client.get("/glossaire").get_data(as_text=True)
 
     assert 'http-equiv="refresh"' in page
+
+def test_le_favicon_est_servi(client, sans_compte_local):
+
+    reponse = client.get("/favicon.ico")
+
+    assert reponse.status_code == 200
+    assert reponse.headers["Content-Type"].startswith("image/")
+
+def test_les_gabarits_declarent_le_favicon(client, sans_compte_local):
+
+    page = client.get("/").get_data(as_text=True)
+
+    assert "favicon.ico" in page
+    assert "apple-touch-icon" in page

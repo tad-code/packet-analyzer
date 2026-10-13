@@ -1,6 +1,6 @@
 
 
-from flask import Blueprint, jsonify, redirect, request, url_for
+from flask import Blueprint, current_app, jsonify, redirect, request, send_from_directory, url_for
 
 from analyse.paquet import PORTS_CONNUS, analyser
 from analyse.protocoles import DRAPEAUX, PORTS, PROTOCOLES, expliquer_drapeaux
@@ -447,6 +447,12 @@ def protocoles():
     return rendre("protocoles.html", "protocoles",
                   protocoles=list(PROTOCOLES.values()),
                   ports=list(PORTS.items()))
+
+@routes.route("/favicon.ico")
+def favicon():
+
+    return send_from_directory(current_app.static_folder, "favicon.ico",
+                               mimetype="image/vnd.microsoft.icon")
 
 @routes.route("/installation")
 def installation():
