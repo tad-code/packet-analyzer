@@ -1,9 +1,12 @@
 <section class="carte">
-    <h2>Exemple complet d'environnement</h2>
+    <h2>Deux exemples d'environnement</h2>
     <p>
-        Tout ce qui suit est illustré sur une machine concrète, prise comme référence. Votre
-        configuration sera probablement très proche ; adaptez seulement les chemins.
+        Tout ce qui suit est illustré sur deux machines concrètes, prises comme références :
+        une sous Windows, une sous Linux. Votre configuration sera probablement très proche
+        de l'une des deux ; adaptez seulement les chemins.
     </p>
+
+    <h3>Sous Windows</h3>
     <dl class="exemple">
         <dt>Système</dt>
         <dd>Windows 11, 64 bits</dd>
@@ -22,9 +25,32 @@
         <dt>Réseau observé</dt>
         <dd>Une connexion Wi-Fi, adresse locale <span class="mono">192.168.1.15</span></dd>
     </dl>
+
+    <h3>Sous Linux</h3>
+    <dl class="exemple">
+        <dt>Système</dt>
+        <dd>Ubuntu 24.04, 64 bits</dd>
+        <dt>Interpréteur Python</dt>
+        <dd>Python 3.12, fourni par la distribution — <span class="mono">/usr/bin/python3</span></dd>
+        <dt>Bibliothèque de capture</dt>
+        <dd>libpcap, presque toujours déjà présente ; au besoin <span class="mono">libpcap0.8</span></dd>
+        <dt>Dossier du projet</dt>
+        <dd><span class="mono">/home/vous/analyseur</span></dd>
+        <dt>Environnement Python isolé</dt>
+        <dd><span class="mono">/home/vous/analyseur/.venv</span> — créé à l'étape 4</dd>
+        <dt>Compte sur ce site</dt>
+        <dd><span class="mono">vous@example.com</span> — le même compte que sous Windows, il n'y en a qu'un</dd>
+        <dt>Droits</dt>
+        <dd>Les droits root, ou la capacité <span class="mono">cap_net_raw</span> sur l'interpréteur. Sous Linux il n'y a pas de « console administrateur » à ouvrir, mais lire les paquets reste un privilège</dd>
+        <dt>Réseau observé</dt>
+        <dd>Une interface Wi-Fi ou Ethernet — <span class="mono">wlan0</span>, <span class="mono">eth0</span> — adresse locale <span class="mono">192.168.1.15</span></dd>
+    </dl>
+
     <p class="petit">
         Rien de tout cela n'est propre à une machine : ce sont simplement les éléments dont
-        vous aurez besoin de connaître la valeur au moment de lancer l'application.
+        vous aurez besoin de connaître la valeur au moment de lancer l'application. Le
+        fichier de configuration <span class="mono">.env</span> est identique sur les deux
+        systèmes.
     </p>
 </section>
 
@@ -40,38 +66,75 @@
             <span class="mono">git clone https://github.com/tad-code/packet-analyzer C:\analyseur</span>.
             <span class="petit">Vous devez obtenir un dossier contenant notamment
             <span class="mono">app.py</span>, <span class="mono">requirements.txt</span>,
-            <span class="mono">verifier_prerequis.py</span>, <span class="mono">.env.example</span>
-            et <span class="mono">demarrer-analyseur.bat</span>.</span>
+            <span class="mono">verifier_prerequis.py</span>, <span class="mono">.env.example</span>,
+            <span class="mono">demarrer-analyseur.bat</span> pour Windows et
+            <span class="mono">demarrer-analyseur.sh</span> pour Linux.</span>
         </li>
 
         <li>
-            <strong>Installez Python 3</strong> depuis <span class="mono">python.org</span>,
-            en cochant <em>« Add Python to PATH »</em> pendant l'installation.
-            Vérifiez ensuite dans une console :
-            <span class="mono">python --version</span> — vous devez voir
+            <strong>Installez Python 3.</strong>
+            <span class="petit">
+            <strong>Sous Windows</strong> — depuis <span class="mono">python.org</span>, en
+            cochant <em>« Add Python to PATH »</em> pendant l'installation. Vérifiez dans une
+            console : <span class="mono">python --version</span>, qui doit afficher
             <span class="mono">Python 3.13.x</span>. Si la commande n'est pas reconnue,
             Python n'est pas dans le PATH : réinstallez en cochant la case.
+            <br>
+            <strong>Sous Linux</strong> — Python est déjà présent, mais l'outil de création
+            d'environnements ne l'est pas toujours :
+            <span class="mono">sudo apt install python3 python3-venv</span> (Debian, Ubuntu,
+            Kali) ou <span class="mono">sudo dnf install python3</span> (Fedora, RHEL).
+            Vérifiez avec <span class="mono">python3 --version</span>, qui doit afficher
+            <span class="mono">Python 3.10</span> ou plus récent.
+            </span>
         </li>
 
         <li>
-            <strong>Installez le pilote de capture Npcap</strong> depuis
-            <span class="mono">npcap.com</span>. Sur la dernière page de l'installateur,
+            <strong>Assurez-vous que la capture est autorisée.</strong> C'est l'étape qui
+            échoue le plus souvent, et elle ne se ressemble pas du tout d'un système à
+            l'autre.
+            <span class="petit">
+            <strong>Sous Windows</strong> — installez le pilote <em>Npcap</em> depuis
+            <span class="mono">npcap.com</span>, et sur la dernière page de l'installateur,
             laissez cochée l'option <em>« Install Npcap in WinPcap API-compatible Mode »</em>.
-            <span class="petit">C'est ce pilote qui permet de lire les paquets. Sans lui,
-            l'application démarre mais ne voit aucune carte réseau — c'est de très loin la
-            cause d'échec la plus fréquente. Le script
-            <span class="mono">verifier_prerequis.py</span> vous le dira en une ligne.</span>
+            Ouvrez ensuite la console <em>en administrateur</em>. C'est ce pilote qui permet
+            de lire les paquets : sans lui, l'application démarre mais ne voit aucune carte
+            réseau. Le script <span class="mono">verifier_prerequis.py</span> vous le dira en
+            une ligne.
+            <br>
+            <strong>Sous Linux</strong> — le pilote s'appelle <em>libpcap</em> et il est
+            presque toujours déjà installé ; en cas de doute,
+            <span class="mono">sudo apt install libpcap0.8</span>. Il n'y a pas de pilote à
+            poser, en revanche lire les paquets exige des privilèges. Le plus simple est de
+            lancer l'application avec <span class="mono">sudo</span>.
+            <br>
+            La méthode plus fine consiste à donner la seule capacité nécessaire à
+            l'interpréteur, plutôt que de tout exécuter en root :
+            <span class="mono">sudo setcap cap_net_raw,cap_net_admin=eip "$(readlink -f .venv/bin/python)"</span>.
+            <strong>À savoir avant de la lancer :</strong> si
+            <span class="mono">.venv/bin/python</span> n'est qu'un lien vers le Python du
+            système, cette commande accorde la capacité au Python <em>du système</em>, donc à
+            tous ses usages et pas seulement à ce projet. C'est pour cette raison que
+            <span class="mono">sudo</span> reste le choix le plus sûr sur un poste personnel.
+            </span>
         </li>
 
         <li>
-            <strong>Créez l'environnement Python et installez les dépendances.</strong>
-            Dans une console <em>ouverte en administrateur</em>, placez-vous dans le dossier :
-            <span class="mono">cd C:\analyseur</span>, puis :
+            <strong>Créez l'environnement Python et installez les dépendances</strong>, dans
+            une console qui a les droits décrits à l'étape précédente.
+            <span class="petit">
+            <strong>Sous Windows</strong> — <span class="mono">cd C:\analyseur</span>, puis
             <span class="mono">python -m venv .venv</span> et
             <span class="mono">.venv\Scripts\python.exe -m pip install -r requirements.txt</span>.
-            <span class="petit">Le premier isole les bibliothèques, le second les installe.
-            Comptez une ou deux minutes : plusieurs paquets sont téléchargés, dont Scapy,
-            la bibliothèque qui lit les paquets.</span>
+            <br>
+            <strong>Sous Linux</strong> — <span class="mono">cd ~/analyseur</span>, puis
+            <span class="mono">python3 -m venv .venv</span> et
+            <span class="mono">.venv/bin/python -m pip install -r requirements.txt</span>.
+            <br>
+            La première commande isole les bibliothèques, la seconde les installe. Comptez une
+            ou deux minutes : plusieurs paquets sont téléchargés, dont Scapy, la bibliothèque
+            qui lit les paquets.
+            </span>
         </li>
 
         <li>
@@ -99,10 +162,20 @@ HOST=127.0.0.1</pre>
         </li>
 
         <li>
-            <strong>Lancez l'application.</strong> Double-cliquez sur
+            <strong>Lancez l'application.</strong>
+            <span class="petit">
+            <strong>Sous Windows</strong> — double-cliquez sur
             <span class="mono">demarrer-analyseur.bat</span>, ou lancez
-            <span class="mono">.venv\Scripts\python.exe app.py</span>. Une console s'ouvre
-            et affiche :
+            <span class="mono">.venv\Scripts\python.exe app.py</span>.
+            <br>
+            <strong>Sous Linux</strong> — rendez le script exécutable une fois pour toutes
+            avec <span class="mono">chmod +x demarrer-analyseur.sh</span>, puis lancez
+            <span class="mono">./demarrer-analyseur.sh</span> — ou directement
+            <span class="mono">.venv/bin/python app.py</span>. Le script rappelle, avant de
+            démarrer, si les privilèges de capture manquent.
+            <br>
+            Dans les deux cas, une console s'ouvre et affiche :
+            </span>
             <pre class="bloc">  Analyseur reseau
   mode : local (capture active)
   adresse locale : http://127.0.0.1:5000
@@ -148,24 +221,34 @@ HOST=127.0.0.1</pre>
         administrateur.
     </p>
     <p>
-        <span class="mono">.venv\Scripts\python.exe verifier_prerequis.py</span> — contrôle
-        Python, les dépendances et le pilote de capture. Vous devez voir, en particulier :
+        <span class="mono">verifier_prerequis.py</span> — contrôle Python, les dépendances
+        et le pilote de capture. Vous devez voir, en particulier :
     </p>
     <pre class="bloc">Pilote de capture : PRESENT</pre>
     <p class="petit">
         Si vous lisez <span class="mono">ABSENT</span> à cette ligne, Npcap n'est pas
         installé, ou la console n'est pas en administrateur. Aucune capture n'est possible
         avant d'avoir réglé ce point.
+        <br>
+        <strong>Ce script est réservé à Windows</strong> : il inspecte les pilotes et les
+        dossiers d'installation propres à ce système. Sous Linux il n'existe pas
+        d'équivalent, parce qu'il n'y a rien à installer — libpcap est fourni par la
+        distribution. Le contrôle se fait autrement : si les privilèges manquent,
+        l'application le dit elle-même au démarrage et la page <em>Capture</em> explique ce
+        qui bloque.
     </p>
     <p>
-        <span class="mono">.venv\Scripts\python.exe -m pytest tests/ -q</span> — exécute la
-        suite de tests du projet, qui couvre la lecture des paquets, le cloisonnement entre
-        comptes et l'explication des communications. Le résultat attendu se termine par :
+        La suite de tests, qui couvre la lecture des paquets, le cloisonnement entre comptes
+        et l'explication des communications. Sous Windows :
+        <span class="mono">.venv\Scripts\python.exe -m pytest tests/ -q</span>. Sous Linux :
+        <span class="mono">.venv/bin/python -m pytest tests/ -q</span>. Le résultat attendu se
+        termine par une ligne de cette forme :
     </p>
-    <pre class="bloc">133 passed in 1.13s</pre>
+    <pre class="bloc">149 passed in 0.79s</pre>
     <p class="petit">
-        Ces tests ne touchent à aucun réseau et n'envoient rien : ils vérifient le
-        comportement du code sur des paquets simulés.
+        Le nombre augmente à chaque version : ce qui compte est qu'aucune ligne n'indique
+        « failed ». Ces tests ne touchent à aucun réseau et n'envoient rien : ils vérifient
+        le comportement du code sur des paquets simulés.
     </p>
 </section>
 
@@ -174,10 +257,16 @@ HOST=127.0.0.1</pre>
     <details class="legende" open>
         <summary>« Aucune interface réseau n'a été détectée »</summary>
         <p class="petit">
-            Le pilote Npcap est absent, ou l'application n'a pas les droits administrateur.
-            Réinstallez Npcap en cochant le mode compatible WinPcap, puis relancez la console
-            en administrateur. C'est la cause la plus fréquente, et le contrôle
-            <span class="mono">verifier_prerequis.py</span> la désigne en une ligne.
+            <strong>Sous Windows</strong> : le pilote Npcap est absent, ou l'application
+            n'a pas les droits administrateur. Réinstallez Npcap en cochant le mode
+            compatible WinPcap, puis relancez la console en administrateur. C'est la cause la
+            plus fréquente, et le contrôle <span class="mono">verifier_prerequis.py</span> la
+            désigne en une ligne.
+            <br>
+            <strong>Sous Linux</strong> : les privilèges de capture manquent. Relancez avec
+            <span class="mono">sudo ./demarrer-analyseur.sh</span>, ou accordez la capacité
+            <span class="mono">cap_net_raw</span> comme expliqué à l'étape 3. Vérifiez aussi
+            que l'interface demandée existe bien, avec <span class="mono">ip link</span>.
         </p>
     </details>
     <details class="legende">
@@ -196,19 +285,27 @@ HOST=127.0.0.1</pre>
             l'application : sur tout autre appareil, il désigne cet appareil-là, où rien
             n'écoute. Depuis un téléphone du même Wi-Fi, utilisez l'adresse réseau affichée
             au lancement, du type <span class="mono">http://192.168.1.15:5000</span> — et
-            mettez <span class="mono">HOST=0.0.0.0</span> dans <span class="mono">.env</span>.
+            mettez <span class="mono">HOST=0.0.0.0</span> dans <span class="mono">.env</span>
+            — ce que font déjà les deux scripts de démarrage.
         </p>
     </details>
     <details class="legende">
         <summary>L'adresse réseau ne répond pas depuis un autre appareil</summary>
         <p class="petit">
-            Le réseau est probablement classé « public », et un antivirus doté d'un pare-feu
-            refuse alors les connexions entrantes — y compris lorsque le pare-feu de Windows
-            est désactivé. Classer le réseau en privé suffit généralement :
+            <strong>Sous Windows</strong> : le réseau est probablement classé « public », et
+            un antivirus doté d'un pare-feu refuse alors les connexions entrantes — y compris
+            lorsque le pare-feu de Windows est désactivé. Classer le réseau en privé suffit
+            généralement :
             <span class="mono">Set-NetConnectionProfile -InterfaceAlias 'Wi-Fi' -NetworkCategory Private</span>.
-            Sur un Wi-Fi public (café, hôtel), refaites l'inverse. Si la box isole ses
-            appareils entre eux, aucun réglage de l'ordinateur n'y remédiera : le câble USB
-            reste la solution.
+            Sur un Wi-Fi public (café, hôtel), refaites l'inverse.
+            <br>
+            <strong>Sous Linux</strong> : vérifiez d'abord le pare-feu local, souvent
+            <span class="mono">ufw</span> —
+            <span class="mono">sudo ufw allow 5000/tcp</span> s'il est actif. Les
+            distributions n'ont pas d'équivalent au classement « public / privé » de Windows.
+            <br>
+            <strong>Dans les deux cas</strong> : si la box isole ses appareils entre eux,
+            aucun réglage de l'ordinateur n'y remédiera, et le câble USB reste la solution.
         </p>
     </details>
     <details class="legende">

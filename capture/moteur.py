@@ -1,9 +1,18 @@
 
 
+import sys
 import threading
 import time
 
 from scapy.all import AsyncSniffer
+
+SYSTEME_WINDOWS = sys.platform.startswith("win")
+
+PILOTE_DE_CAPTURE = "Npcap" if SYSTEME_WINDOWS else "libpcap"
+
+DROITS_DE_CAPTURE = ("les droits administrateur" if SYSTEME_WINDOWS
+                     else "les droits root, ou la capacite cap_net_raw sur l'interpreteur")
+
 
 class ErreurCapture(Exception):
 
@@ -82,9 +91,11 @@ class MoteurCapture:
                     pass
                 raise ErreurCapture(
                     f"Impossible d'ouvrir l'interface « {interface} ».",
-                    "Vérifiez que cette carte réseau existe et qu'elle est active. "
+                    "Vérifiez que cette carte réseau existe et qu'elle est active, et que "
+                    f"le pilote {PILOTE_DE_CAPTURE} est installé. "
                     f"Détail technique : {probleme}" if probleme else
-                    "Vérifiez que cette carte réseau existe et qu'elle est active.",
+                    "Vérifiez que cette carte réseau existe et qu'elle est active, et que "
+                    f"le pilote {PILOTE_DE_CAPTURE} est installé.",
                 )
         except ErreurCapture:
 
@@ -92,7 +103,8 @@ class MoteurCapture:
         except PermissionError:
             raise ErreurCapture(
                 "La capture a ete refusee par le systeme.",
-                "La capture de paquets exige les droits administrateur et le pilote Npcap.",
+                f"La capture de paquets exige {DROITS_DE_CAPTURE} et le pilote "
+                f"{PILOTE_DE_CAPTURE}.",
             )
         except OSError as e:
             raise ErreurCapture(

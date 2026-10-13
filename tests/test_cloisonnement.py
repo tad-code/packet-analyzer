@@ -89,7 +89,7 @@ def test_le_mode_d_emploi_d_installation_est_public_et_complet(client, base_pret
 
     assert reponse.status_code == 200
     page = reponse.get_data(as_text=True)
-    for repere in ["Exemple complet d'environnement", "Npcap",
+    for repere in ["Deux exemples d'environnement", "Npcap",
                    "ANALYSEUR_COMPTE_COURRIEL", "demarrer-analyseur.bat",
                    "verifier_prerequis.py", "127.0.0.1"]:
         assert repere in page, repere
@@ -112,7 +112,7 @@ def test_la_page_capture_affiche_le_mode_d_emploi_complet(client, base_prete, mo
     assert reponse.status_code == 200
     page = reponse.get_data(as_text=True)
     for repere in ["Capture impossible depuis ce serveur",
-                   "Exemple complet d'environnement",
+                   "Deux exemples d'environnement",
                    "Le mode d'emploi, étape par étape",
                    "ANALYSEUR_COMPTE_COURRIEL",
                    "verifier_prerequis.py",

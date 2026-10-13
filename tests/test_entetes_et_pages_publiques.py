@@ -147,3 +147,23 @@ def test_les_gabarits_declarent_le_favicon(client, sans_compte_local):
 
     assert "favicon.ico" in page
     assert "apple-touch-icon" in page
+
+def test_le_mode_d_emploi_couvre_windows_et_linux(client, sans_compte_local):
+
+    page = client.get("/installation").get_data(as_text=True)
+
+    for repere in ["Sous Windows", "Sous Linux", "libpcap", "cap_net_raw",
+                   "demarrer-analyseur.sh", "python3 -m venv", "ufw", "ip link"]:
+        assert repere in page, repere
+
+def test_les_deux_scripts_de_demarrage_existent():
+
+    assert (RACINE / "demarrer-analyseur.bat").exists()
+    assert (RACINE / "demarrer-analyseur.sh").exists()
+    assert (RACINE / ".gitattributes").exists()
+
+def test_le_script_linux_a_des_fins_de_ligne_unix():
+
+    contenu = (RACINE / "demarrer-analyseur.sh").read_bytes()
+
+    assert b"\r\n" not in contenu
