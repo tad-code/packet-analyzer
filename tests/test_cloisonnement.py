@@ -101,6 +101,24 @@ def test_le_mode_d_emploi_ne_lit_aucune_donnee(client, base_prete, monkeypatch):
 
     assert client.get("/installation").status_code == 200
 
+def test_la_page_capture_affiche_le_mode_d_emploi_complet(client, base_prete, monkeypatch):
+
+    ouvrir(client, COMPTE_A)
+    monkeypatch.setattr(config, "capture_locale", False)
+    monkeypatch.setattr(routes_module.supabase, "lire", lambda *a, **k: [])
+
+    reponse = client.get("/capture")
+
+    assert reponse.status_code == 200
+    page = reponse.get_data(as_text=True)
+    for repere in ["Capture impossible depuis ce serveur",
+                   "Exemple complet d'environnement",
+                   "Le mode d'emploi, étape par étape",
+                   "ANALYSEUR_COMPTE_COURRIEL",
+                   "verifier_prerequis.py",
+                   "Ce qui bloque le plus souvent"]:
+        assert repere in page, repere
+
 def test_l_accueil_public_n_expose_aucune_capture(client, base_prete, monkeypatch):
 
     monkeypatch.setattr(routes_module.supabase, "lire",

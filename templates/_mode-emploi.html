@@ -1,0 +1,246 @@
+<section class="carte">
+    <h2>Exemple complet d'environnement</h2>
+    <p>
+        Tout ce qui suit est illustré sur une machine concrète, prise comme référence. Votre
+        configuration sera probablement très proche ; adaptez seulement les chemins.
+    </p>
+    <dl class="exemple">
+        <dt>Système</dt>
+        <dd>Windows 11, 64 bits</dd>
+        <dt>Interpréteur Python</dt>
+        <dd>Python 3.13, installé dans <span class="mono">C:\Users\vous\AppData\Local\Programs\Python\Python313</span></dd>
+        <dt>Pilote de capture</dt>
+        <dd>Npcap 1.79, installé avec l'option « WinPcap compatibility mode »</dd>
+        <dt>Dossier du projet</dt>
+        <dd><span class="mono">C:\analyseur</span></dd>
+        <dt>Environnement Python isolé</dt>
+        <dd><span class="mono">C:\analyseur\.venv</span> — créé à l'étape 4, il contient les bibliothèques du projet sans toucher au reste du système</dd>
+        <dt>Compte sur ce site</dt>
+        <dd><span class="mono">vous@example.com</span> — créé avant l'installation, c'est lui qui recevra les captures</dd>
+        <dt>Droits</dt>
+        <dd>Console lancée <strong>en administrateur</strong> : sans cela, le pilote refuse de s'ouvrir</dd>
+        <dt>Réseau observé</dt>
+        <dd>Une connexion Wi-Fi, adresse locale <span class="mono">192.168.1.15</span></dd>
+    </dl>
+    <p class="petit">
+        Rien de tout cela n'est propre à une machine : ce sont simplement les éléments dont
+        vous aurez besoin de connaître la valeur au moment de lancer l'application.
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Le mode d'emploi, étape par étape</h2>
+    <ol class="etapes">
+
+        <li>
+            <strong>Récupérez le projet</strong> depuis
+            <span class="mono">https://github.com/tad-code/packet-analyzer</span>. Soit en
+            cliquant sur <em>Code</em> puis <em>Download ZIP</em> et en décompressant dans
+            <span class="mono">C:\analyseur</span>, soit par clonage si vous avez Git :
+            <span class="mono">git clone https://github.com/tad-code/packet-analyzer C:\analyseur</span>.
+            <span class="petit">Vous devez obtenir un dossier contenant notamment
+            <span class="mono">app.py</span>, <span class="mono">requirements.txt</span>,
+            <span class="mono">verifier_prerequis.py</span>, <span class="mono">.env.example</span>
+            et <span class="mono">demarrer-analyseur.bat</span>.</span>
+        </li>
+
+        <li>
+            <strong>Installez Python 3</strong> depuis <span class="mono">python.org</span>,
+            en cochant <em>« Add Python to PATH »</em> pendant l'installation.
+            Vérifiez ensuite dans une console :
+            <span class="mono">python --version</span> — vous devez voir
+            <span class="mono">Python 3.13.x</span>. Si la commande n'est pas reconnue,
+            Python n'est pas dans le PATH : réinstallez en cochant la case.
+        </li>
+
+        <li>
+            <strong>Installez le pilote de capture Npcap</strong> depuis
+            <span class="mono">npcap.com</span>. Sur la dernière page de l'installateur,
+            laissez cochée l'option <em>« Install Npcap in WinPcap API-compatible Mode »</em>.
+            <span class="petit">C'est ce pilote qui permet de lire les paquets. Sans lui,
+            l'application démarre mais ne voit aucune carte réseau — c'est de très loin la
+            cause d'échec la plus fréquente. Le script
+            <span class="mono">verifier_prerequis.py</span> vous le dira en une ligne.</span>
+        </li>
+
+        <li>
+            <strong>Créez l'environnement Python et installez les dépendances.</strong>
+            Dans une console <em>ouverte en administrateur</em>, placez-vous dans le dossier :
+            <span class="mono">cd C:\analyseur</span>, puis :
+            <span class="mono">python -m venv .venv</span> et
+            <span class="mono">.venv\Scripts\python.exe -m pip install -r requirements.txt</span>.
+            <span class="petit">Le premier isole les bibliothèques, le second les installe.
+            Comptez une ou deux minutes : plusieurs paquets sont téléchargés, dont Scapy,
+            la bibliothèque qui lit les paquets.</span>
+        </li>
+
+        <li>
+            <strong>Déclarez votre compte et votre configuration.</strong> Copiez
+            <span class="mono">.env.example</span> en <span class="mono">.env</span>, puis
+            ouvrez ce fichier avec un éditeur de texte. Il contient, avec des valeurs
+            d'exemple :
+            <pre class="bloc">SUPABASE_URL=https://votre-projet.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_votre_cle_publique
+
+FLASK_SECRET_KEY=une-longue-chaine-aleatoire-a-vous
+SESSION_COOKIE_SECURE=0
+
+ANALYSEUR_COMPTE_COURRIEL=vous@example.com
+ANALYSEUR_COMPTE_MOT_DE_PASSE=votre-mot-de-passe
+
+HOST=127.0.0.1</pre>
+            <span class="petit">Les deux lignes <span class="mono">ANALYSEUR_COMPTE_*</span>
+            sont celles qui comptent : elles désignent le compte auquel <strong>vos</strong>
+            captures seront rattachées. Utilisez le compte que vous avez créé sur ce site.
+            <span class="mono">HOST=127.0.0.1</span> limite l'écoute à votre machine ;
+            <span class="mono">HOST=0.0.0.0</span> l'ouvre à votre réseau local, pour
+            l'ouvrir depuis un téléphone. Ce fichier n'est jamais publié : il reste sur
+            votre disque.</span>
+        </li>
+
+        <li>
+            <strong>Lancez l'application.</strong> Double-cliquez sur
+            <span class="mono">demarrer-analyseur.bat</span>, ou lancez
+            <span class="mono">.venv\Scripts\python.exe app.py</span>. Une console s'ouvre
+            et affiche :
+            <pre class="bloc">  Analyseur reseau
+  mode : local (capture active)
+  adresse locale : http://127.0.0.1:5000
+  depuis un telephone du reseau : http://192.168.1.15:5000
+  comptes : Supabase Auth
+  capture attribuee au compte : vous@example.com</pre>
+            <span class="petit">Trois vérifications immédiates : <span class="mono">mode :
+            local</span> indique que la capture est active ; la ligne <span class="mono">capture
+            attribuee au compte</span> confirme que votre compte est bien lu depuis
+            <span class="mono">.env</span> ; et l'adresse affichée est celle à ouvrir.
+            <strong>Gardez cette console ouverte</strong> : la fermer arrête l'application.</span>
+        </li>
+
+        <li>
+            <strong>Ouvrez <span class="mono">http://127.0.0.1:5000</span></strong> dans le
+            navigateur <em>de cette machine</em>, puis allez sur la page <em>Capture</em>.
+            Choisissez la carte réseau à écouter dans la liste — sur l'exemple, l'interface
+            Wi-Fi — et cliquez sur <em>Démarrer</em>.
+        </li>
+
+        <li>
+            <strong>Faites circuler du trafic.</strong> Une capture ne montre que ce qui
+            passe : ouvrez une page web, lancez une mise à jour, envoyez un message. Les
+            premières lignes apparaissent en quelques secondes, avec l'heure, les adresses
+            source et destination, le protocole et le port de service.
+        </li>
+
+        <li>
+            <strong>Enregistrez la capture</strong> en cliquant sur <em>Enregistrer cette
+            capture</em>. Elle rejoint votre historique, ici même sur le site, et devient
+            consultable depuis n'importe quel appareil, y compris votre téléphone. Seules
+            les communications sont conservées : une capture produit des milliers de
+            paquets, dont l'analyse individuelle n'aurait pas de sens.
+        </li>
+
+    </ol>
+</section>
+
+<section class="carte">
+    <h2>Vérifier que tout est en place</h2>
+    <p>
+        Le projet fournit deux vérifications, à lancer dans le dossier, console en
+        administrateur.
+    </p>
+    <p>
+        <span class="mono">.venv\Scripts\python.exe verifier_prerequis.py</span> — contrôle
+        Python, les dépendances et le pilote de capture. Vous devez voir, en particulier :
+    </p>
+    <pre class="bloc">Pilote de capture : PRESENT</pre>
+    <p class="petit">
+        Si vous lisez <span class="mono">ABSENT</span> à cette ligne, Npcap n'est pas
+        installé, ou la console n'est pas en administrateur. Aucune capture n'est possible
+        avant d'avoir réglé ce point.
+    </p>
+    <p>
+        <span class="mono">.venv\Scripts\python.exe -m pytest tests/ -q</span> — exécute la
+        suite de tests du projet, qui couvre la lecture des paquets, le cloisonnement entre
+        comptes et l'explication des communications. Le résultat attendu se termine par :
+    </p>
+    <pre class="bloc">133 passed in 1.13s</pre>
+    <p class="petit">
+        Ces tests ne touchent à aucun réseau et n'envoient rien : ils vérifient le
+        comportement du code sur des paquets simulés.
+    </p>
+</section>
+
+<section class="carte">
+    <h2>Ce qui bloque le plus souvent</h2>
+    <details class="legende" open>
+        <summary>« Aucune interface réseau n'a été détectée »</summary>
+        <p class="petit">
+            Le pilote Npcap est absent, ou l'application n'a pas les droits administrateur.
+            Réinstallez Npcap en cochant le mode compatible WinPcap, puis relancez la console
+            en administrateur. C'est la cause la plus fréquente, et le contrôle
+            <span class="mono">verifier_prerequis.py</span> la désigne en une ligne.
+        </p>
+    </details>
+    <details class="legende">
+        <summary>La capture démarre mais aucun paquet n'apparaît</summary>
+        <p class="petit">
+            Deux explications : la mauvaise carte réseau est écoutée — sur une machine qui a
+            le Wi-Fi et une carte virtuelle, choisissez celle qui correspond à votre
+            connexion réelle — ou bien aucun trafic ne passe. Ouvrez une page web pendant la
+            capture : les paquets doivent apparaître aussitôt.
+        </p>
+    </details>
+    <details class="legende">
+        <summary>Mon téléphone ou un autre appareil n'atteint pas l'adresse</summary>
+        <p class="petit">
+            <span class="mono">127.0.0.1</span> ne fonctionne que sur la machine qui exécute
+            l'application : sur tout autre appareil, il désigne cet appareil-là, où rien
+            n'écoute. Depuis un téléphone du même Wi-Fi, utilisez l'adresse réseau affichée
+            au lancement, du type <span class="mono">http://192.168.1.15:5000</span> — et
+            mettez <span class="mono">HOST=0.0.0.0</span> dans <span class="mono">.env</span>.
+        </p>
+    </details>
+    <details class="legende">
+        <summary>L'adresse réseau ne répond pas depuis un autre appareil</summary>
+        <p class="petit">
+            Le réseau est probablement classé « public », et un antivirus doté d'un pare-feu
+            refuse alors les connexions entrantes — y compris lorsque le pare-feu de Windows
+            est désactivé. Classer le réseau en privé suffit généralement :
+            <span class="mono">Set-NetConnectionProfile -InterfaceAlias 'Wi-Fi' -NetworkCategory Private</span>.
+            Sur un Wi-Fi public (café, hôtel), refaites l'inverse. Si la box isole ses
+            appareils entre eux, aucun réglage de l'ordinateur n'y remédiera : le câble USB
+            reste la solution.
+        </p>
+    </details>
+    <details class="legende">
+        <summary>Un appareil du réseau demande un identifiant</summary>
+        <p class="petit">
+            C'est le comportement normal, pas un défaut. Seule la machine qui exécute
+            l'application est reconnue automatiquement ; tout ce qui arrive par le réseau
+            doit s'authentifier, et ne voit alors que les captures du compte utilisé.
+        </p>
+    </details>
+    <details class="legende">
+        <summary>Le site en ligne semble afficher une ancienne version</summary>
+        <p class="petit">
+            L'adresse publique n'est pas mise à jour automatiquement à chaque déploiement :
+            elle doit être reportée sur la dernière version. Le script
+            <span class="mono">deployer-en-ligne.bat</span> fait les deux en une seule
+            commande et vérifie ensuite que l'adresse répond.
+        </p>
+    </details>
+</section>
+
+<section class="carte">
+    <h2>Ce qui ne quitte pas votre machine</h2>
+    <p>
+        L'application lit les paquets localement, sur votre machine. Le fichier
+        <span class="mono">.env</span>, qui contient vos identifiants, reste sur votre
+        disque et n'est jamais publié. Ce qui remonte sur ce site se limite aux
+        communications que vous avez explicitement enregistrées, rattachées à votre compte —
+        et visibles de vous seul.
+    </p>
+    <p class="petit">
+        Capturez uniquement sur un réseau que vous êtes autorisé à observer : le vôtre, ou
+        celui pour lequel vous disposez d'un accord écrit.
+    </p>
+</section>

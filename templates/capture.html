@@ -16,49 +16,9 @@
         <strong>L'observation se fait sur votre propre ordinateur.</strong> Chaque
         utilisateur installe et lance l'application chez lui. Ses captures remontent ensuite
         ici, dans son espace personnel : aucun utilisateur n'accède à la machine d'un autre.
+        <strong>Ce qui suit est le mode d'emploi complet</strong> : l'environnement attendu,
+        les étapes, les commandes, les résultats à obtenir et les pannes les plus fréquentes.
     </p>
-
-    <h3>Lancer l'application chez vous, en six étapes</h3>
-    <ol class="etapes">
-        <li>
-            <strong>Récupérez le projet</strong> — depuis
-            <span class="mono">https://github.com/tad-code/packet-analyzer</span>,
-            par téléchargement ou par clonage.
-        </li>
-        <li>
-            <strong>Installez les prérequis</strong> — <em>Python 3</em>, puis le pilote de
-            capture <em>Npcap</em> sur Windows. Sans ce pilote, aucune carte réseau n'est
-            lisible. Un utilitaire <span class="mono">verifier_prerequis.py</span> dit ce qui manque.
-        </li>
-        <li>
-            <strong>Déclarez votre compte</strong> — dans le fichier
-            <span class="mono">.env</span>, renseignez
-            <span class="mono">ANALYSEUR_COMPTE_COURRIEL</span> et
-            <span class="mono">ANALYSEUR_COMPTE_MOT_DE_PASSE</span> : c'est le compte
-            auquel vos captures seront rattachées. Créez-le d'abord ici, sur cette page.
-        </li>
-        <li>
-            <strong>Lancez l'application</strong> — <span class="mono">demarrer-analyseur.bat</span>
-            sous Windows, ou <span class="mono">python app.py</span> ailleurs. Un terminal
-            doit rester ouvert.
-        </li>
-        <li>
-            <strong>Ouvrez <span class="mono">http://127.0.0.1:5000</span></strong> —
-            choisissez la carte réseau à écouter, puis démarrez la capture. Faites circuler
-            du trafic pour obtenir des paquets.
-        </li>
-        <li>
-            <strong>Enregistrez la capture</strong> — elle apparaît aussitôt dans votre
-            historique, ici même, et se consulte depuis n'importe quel appareil.
-        </li>
-    </ol>
-
-    <p>
-        <a href="{{ url_for('routes.installation') }}"><strong>Mode d'emploi détaillé</strong></a>
-        — la marche à suivre complète, commande par commande, avec un exemple
-        d'environnement, le résultat attendu à chaque étape et les pannes les plus fréquentes.
-    </p>
-
     <p class="petit">
         <strong><span class="mono">127.0.0.1</span> désigne toujours la machine sur laquelle
         vous êtes.</strong> Cette adresse ne fonctionne donc que sur l'ordinateur où
@@ -66,6 +26,8 @@
         aucun serveur, et cela restera vrai quels que soient les réglages de son réseau.
     </p>
 </section>
+
+{% include "_mode-emploi.html" %}
 {% endif %}
 <section class="carte">
     <h2>Que fait cet écran ?</h2>
